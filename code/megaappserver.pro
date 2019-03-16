@@ -22,7 +22,9 @@ SOURCES += main.cpp \
     t4/t4para.cpp \
     t4/mrx_t4service.cpp \
     t4/mrx_t4server.cpp \
-    intfserverpara.cpp
+    intfserverpara.cpp \
+    intfobj.cpp \
+    t4/intfseries.cpp
 
 HEADERS += \
     mappserver.h \
@@ -31,9 +33,12 @@ HEADERS += \
     t4/t4para.h \
     t4/mrx_t4service.h \
     t4/mrx_t4server.h \
-    intfserverpara.h
+    intfserverpara.h \
+    intfobj.h \
+    t4/intfseries.h
 
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
+INCLUDEPATH += "G:/work/mct/source/device"
 
 LIBS += -L"../code/lib"
 LIBS += -lmrx-device

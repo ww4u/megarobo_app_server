@@ -41,7 +41,7 @@ void MAppService::attachServer( MAppServer *pServer )
 }
 
 //! proc
-void MAppService::proc( const QJsonObject &jsonObj )
+void MAppService::proc( QJsonObject &jsonObj )
 {
     QString strCmdName;
     if ( jsonObj.contains("command") )
@@ -55,6 +55,7 @@ void MAppService::proc( const QJsonObject &jsonObj )
     }
 
     QMapIterator< QString, P_PROC > iter( mProcMap );
+    int ret;
     while( iter.hasNext() )
     {
         iter.next();
@@ -62,12 +63,21 @@ void MAppService::proc( const QJsonObject &jsonObj )
         //! match
         if ( QString::compare( iter.key(), strCmdName ) == 0 )
         {
-            (this->*(iter.value()))( jsonObj );
+            ret = (this->*(iter.value()))( jsonObj );
+            if ( ret != 0 )
+            { logDbg()<<ret; }
             return;
         }
     }
 
     logDbg()<<"no command match";
+}
+
+void MAppService::output( const QJsonObject &obj )
+{
+    QJsonDocument doc( obj );
+
+    mOutput = doc.toJson();
 }
 
 void MAppService::slot_dataIn( )
@@ -78,10 +88,12 @@ void MAppService::slot_dataIn( )
     logDbg()<<ary;
 
     QJsonDocument doc = QJsonDocument::fromJson( ary );
+    QJsonObject localObj;
     if ( doc.isObject() )
     {
 //        logDbg()<<doc.object();
-        proc( doc.object() );
+        localObj = doc.object();
+        proc( localObj );
     }
     else
     {

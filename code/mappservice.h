@@ -11,7 +11,7 @@ class MAppService : public QThread
     Q_OBJECT
 
 public:
-    typedef void (MAppService::*P_PROC)( const QJsonObject &obj  );
+    typedef int (MAppService::*P_PROC)( const QJsonObject &obj  );
 
 public:
     explicit MAppService( qintptr ptr, QObject *parent = nullptr);
@@ -24,9 +24,10 @@ public:
     void attachServer( MAppServer *pServer );
 
 protected:
-    void proc( const QJsonObject &jsonObj );
+    void proc( QJsonObject &jsonObj );
+    void output( const QJsonObject &obj );
 
-private:
+protected:
     qintptr mPtr;
     QTcpSocket *m_pSocket;
 

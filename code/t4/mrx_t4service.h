@@ -9,16 +9,24 @@ public:
     MRX_T4Service( qintptr ptr, QObject *parent = nullptr );
 
 protected:
-    void on_step_proc( const QJsonObject &obj );
-    void on_joint_step_proc( const QJsonObject &obj );
-    void on_action_proc( const QJsonObject &obj );
-    void on_indicator_proc( const QJsonObject &obj );
-    void on_add_proc( const QJsonObject &obj );
-    void on_query_proc( const QJsonObject &obj );
-    void on_link_status_proc( const QJsonObject &obj );
-    void on_device_status_proc( const QJsonObject &obj );
-    void on_exception_proc( const QJsonObject &obj );
-    void on_pose_proc( const QJsonObject &obj );
+    int on_ack_proc(  QJsonObject &obj );
+    int on_step_proc(  QJsonObject &obj );
+    int on_joint_step_proc(  QJsonObject &obj );
+    int on_action_proc(  QJsonObject &obj );
+
+    int on_indicator_proc(  QJsonObject &obj );
+    int on_add_proc(  QJsonObject &obj );
+    int on_query_proc(  QJsonObject &obj );
+    int on_link_status_proc(  QJsonObject &obj );
+
+    int on_device_status_proc(  QJsonObject &obj );
+    int on_exception_proc(  QJsonObject &obj );
+    int on_pose_proc(  QJsonObject &obj );
+    int on_parameter_proc(  QJsonObject &obj );
+
+    int on_dataset_proc(  QJsonObject &obj );
+    int on_meta_proc(  QJsonObject &obj );
+    int on_config_proc(  QJsonObject &obj );
 };
 
 #endif // MRX_T4SERVICE_H
