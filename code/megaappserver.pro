@@ -16,26 +16,33 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += main.cpp \
-    mappserver.cpp \
     mappservice.cpp \
     serverintf.cpp \
     t4/t4para.cpp \
     t4/mrx_t4service.cpp \
-    t4/mrx_t4server.cpp \
     intfserverpara.cpp \
     intfobj.cpp \
-    t4/intfseries.cpp
+    t4/intfseries.cpp \
+    mappexec.cpp \
+    mtcpserver.cpp \
+    t4/mrx_t4tcpserver.cpp \
+    mappserver.cpp \
+    t4/mrx_t4server.cpp
 
 HEADERS += \
-    mappserver.h \
     mappservice.h \
     serverintf.h \
     t4/t4para.h \
     t4/mrx_t4service.h \
-    t4/mrx_t4server.h \
     intfserverpara.h \
     intfobj.h \
-    t4/intfseries.h
+    t4/intfseries.h \
+    mappexec.h \
+    myjson.h \
+    mtcpserver.h \
+    t4/mrx_t4tcpserver.h \
+    mappserver.h \
+    t4/mrx_t4server.h
 
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
 INCLUDEPATH += "G:/work/mct/source/device"

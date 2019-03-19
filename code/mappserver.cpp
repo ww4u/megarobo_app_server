@@ -1,35 +1,20 @@
 #include "mappserver.h"
-#include <QTcpSocket>
-#include "mydebug.h"
+#include "mtcpserver.h"
 
-MAppServer::MAppServer(QObject *parent) : QTcpServer(parent)
+MAppServer::MAppServer(QObject *parent) : QObject(parent)
 {
 
 }
 
-//void MAppServer::incomingConnection(qintptr socketDescriptor)
-//{
-//    logDbg();
-//    MAppService *thread = new MAppService(socketDescriptor, 0 );
-//    thread->moveToThread( thread );
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-//    thread->start();
-//}
-
-bool MAppServer::start()
+MAppServer::~MAppServer()
 {
-    bool bRet;
-    bRet = listen( QHostAddress::Any, 2345 );
-    if ( bRet )
-    {}
-    else
-    { return false; }
-
-    //! try open
-    int ret = open();
-    logDbg()<<ret;
-
-    return true;
+    qDeleteAll( mTcpServers );
 }
 
+int MAppServer::start()
+{ return -1; }
 
+int MAppServer::open()
+{ return 0; }
+void MAppServer::close()
+{  }

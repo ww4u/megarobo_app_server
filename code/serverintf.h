@@ -23,7 +23,7 @@ public:
     virtual void close();
 
 protected:
-    QString mModel, mAddr;
+    QString mAddr;
     int mVi;
 
     int mRobotHandle;

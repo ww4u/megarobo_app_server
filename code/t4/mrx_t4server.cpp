@@ -1,41 +1,60 @@
 #include "mrx_t4server.h"
-#include "mrx_t4service.h"
+#include "mrx_t4tcpserver.h"
 
 #include "../mydebug.h"
 #include "../device/MegaGateway.h"
 
-MRX_T4Server::MRX_T4Server( QObject *parent ) : MAppServer( parent )
+MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServer( pParent )
 {
-//    mAddr = "TCPIP0::169.254.1.2::INST0::INSTR";
-    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";
-}
-
-void MRX_T4Server::incomingConnection(qintptr socketDescriptor)
-{
-    //! has opened
-    if ( isOpend() )
-    {}
-    else
+    mPorts.clear();
+    for ( int i = 0; i < cnt; i++ )
     {
-        logDbg()<<"fail open the device";
-        return;
+        mPorts<<(portBase+i);
     }
 
-    MAppService *thread = new MRX_T4Service(socketDescriptor, 0 );
-    thread->moveToThread( thread );
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive
+}
 
-    thread->attachServer( this );
+int MRX_T4Server::start()
+{
+    int ret;
 
-    thread->start();
+    //! load the data
+    ret = load();
+
+    //! create a few servers
+    MRX_T4TcpServer *pServer;
+    foreach( quint16 port, mPorts )
+    {
+        pServer = new MRX_T4TcpServer( this );
+        if ( NULL == pServer )
+        { return -11; }
+
+        pServer->attachServer( this );
+
+        if ( pServer->start( port ) )
+        {}
+        else
+        { return -12; }
+
+        //! append
+        mTcpServers.append( pServer );
+    }
+
+    return ret;
 }
 
 int MRX_T4Server::open()
 {
+#ifdef QT_DEBUG
+    mVi = 1;
+    return 0;
+#endif
+
     int ret;
 
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 500 );
+    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );
     if ( vi > 0 )
     { mVi = vi; }
     else
@@ -69,6 +88,17 @@ void MRX_T4Server::close()
         mrgCloseGateWay( mVi );
         mVi = 0;
     }
+}
 
-    return;
+int MRX_T4Server::load()
+{
+    int ret;
+
+    ret = loadConfig();
+    if ( ret != 0 )
+    { return ret; }
+
+    ret = loadDataSet();
+
+    return ret;
 }

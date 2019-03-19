@@ -1,5 +1,6 @@
 #include "mrx_t4service.h"
 #include "../mydebug.h"
+#include "../myjson.h"
 #include "t4para.h"
 
 #include "mrx_t4server.h"
@@ -16,8 +17,12 @@ if ( NULL == _pLocalServer )\
 
 
 #define pre_def( type )  check_connect();\
+                         QJsonObject obj = doc.object();\
                          type var;\
-                         int localRet = -1111;
+                         int localRet = -1111;\
+                            \
+                        Q_ASSERT( NULL != m_pServer );\
+                        MRX_T4Server *pLocalServer = (MRX_T4Server*)m_pServer;
 
 #define api_type    MAppService::P_PROC
 #define api_class   MRX_T4Service
@@ -43,39 +48,35 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
     mProcMap.insert( QString("query"), (api_type)&api_class::on_query_proc);
     mProcMap.insert( QString("link_status"), (api_type)&api_class::on_link_status_proc);
 
-    mProcMap.insert( QString("device_status"), (api_type)&api_class::on_device_status_proc);
-    mProcMap.insert( QString("exception"), (api_type)&api_class::on_exception_proc);
-    mProcMap.insert( QString("pose"), (api_type)&api_class::on_pose_proc);
-    mProcMap.insert( QString("parameter"), (api_type)&api_class::on_parameter_proc);
+//    mProcMap.insert( QString("device_status"), (api_type)&api_class::on_device_status_proc);
+//    mProcMap.insert( QString("exception"), (api_type)&api_class::on_exception_proc);
+//    mProcMap.insert( QString("pose"), (api_type)&api_class::on_pose_proc);
+//    mProcMap.insert( QString("parameter"), (api_type)&api_class::on_parameter_proc);
 
-    mProcMap.insert( QString("dataset"), (api_type)&api_class::on_dataset_proc);
-    mProcMap.insert( QString("meta"), (api_type)&api_class::on_meta_proc);
+//    mProcMap.insert( QString("dataset"), (api_type)&api_class::on_dataset_proc);
+//    mProcMap.insert( QString("meta"), (api_type)&api_class::on_meta_proc);
     mProcMap.insert( QString("config"), (api_type)&api_class::on_config_proc);
 }
 
-int MRX_T4Service::on_ack_proc(  QJsonObject &obj )
+bool MRX_T4Service::onUserEvent(QEvent *pEvent)
+{
+    logDbg_Thread();
+
+    MServiceEvent *pLocalEvent = (MServiceEvent*)pEvent;
+    QJsonDocument localDoc = pLocalEvent->mVar1.toJsonDocument();
+
+    //! proc the json obj
+    proc( localDoc );
+
+    return true;
+}
+
+int MRX_T4Service::on_ack_proc(  QJsonDocument &doc )
 {
     return 0;
 }
 
-#define deload_double( item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toDouble(); logDbg()<<var.item; } \
-                                else \
-                                { return -1; }
-#define deload_string( item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toString(); logDbg()<<var.item; } \
-                                else \
-                                { return -1; }
-#define deload_int( item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toInt(); logDbg()<<var.item; } \
-                                else \
-                                { return -1; }
-#define deload_bool( item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toBool(); logDbg()<<var.item; } \
-                                else \
-                                { return -1; }
-
-int MRX_T4Service::on_step_proc(  QJsonObject &obj )
+int MRX_T4Service::on_step_proc(  QJsonDocument &doc )
 {
     pre_def( Intfstep );
 
@@ -83,9 +84,11 @@ int MRX_T4Service::on_step_proc(  QJsonObject &obj )
     deload_double( z );
     deload_bool( continous );
 
+    //! \todo
+
     return 0;
 }
-int MRX_T4Service::on_joint_step_proc(  QJsonObject &obj )
+int MRX_T4Service::on_joint_step_proc(  QJsonDocument &doc )
 {
     pre_def( Intfjoint_step );
 
@@ -118,7 +121,7 @@ int MRX_T4Service::on_joint_step_proc(  QJsonObject &obj )
 
     return localRet;
 }
-int MRX_T4Service::on_action_proc(  QJsonObject &obj )
+int MRX_T4Service::on_action_proc( QJsonDocument &doc )
 {
     pre_def( Intfaction );
 
@@ -159,7 +162,7 @@ int MRX_T4Service::on_action_proc(  QJsonObject &obj )
     return localRet;
 }
 
-int MRX_T4Service::on_indicator_proc(  QJsonObject &obj )
+int MRX_T4Service::on_indicator_proc(  QJsonDocument &doc )
 {
     pre_def( Intfindicator );
 
@@ -170,46 +173,73 @@ int MRX_T4Service::on_indicator_proc(  QJsonObject &obj )
     return localRet;
 }
 
-
-int MRX_T4Service::on_add_proc(  QJsonObject &obj )
+int MRX_T4Service::on_add_proc(  QJsonDocument &doc )
 {
     pre_def( Intfadd );
 
     deload_string( name );
 
-    //! \todo the pose
+    //! object
+    QJsonObject poseObj;
+    _deload_json_obj( poseObj, obj, pose );
+
+    __deload_double( poseObj, var.pose, x );
+    __deload_double( poseObj, var.pose, y );
+    __deload_double( poseObj, var.pose, z );
+    __deload_double( poseObj, var.pose, w );
+    __deload_double( poseObj, var.pose, h );
+
+    pLocalServer->addPoint( var.name, var.pose );
+
+    pLocalServer->saveDataSet();
 
     return 0;
 }
-int MRX_T4Service::on_query_proc(  QJsonObject &obj )
+
+#define query_( proc )  localRet = proc( localDoc );\
+                        if ( localRet != 0 )\
+                        { return localRet; }\
+                        \
+                        output( localDoc );
+int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
 {
     pre_def( Intfquery );
 
     deload_string( item );
 
-    QJsonObject localObj;
+    QJsonDocument localDoc;
     if ( var.item == "link_status" )
-    {}
+    {
+        query_( on_link_status_proc_q );
+    }
     else if ( var.item == "device_status" )
     {
-        localRet = on_device_status_proc( localObj );
-        if ( localRet != 0 )
-        { return localRet; }
-
-        output( localObj );
+        query_( on_device_status_proc );
     }
     else if ( var.item == "exception" )
-    {}
+    {
+        query_( on_exception_proc );
+    }
     else if ( var.item == "pose" )
-    {}
+    {
+        query_( on_pose_proc );
+    }
     else if ( var.item == "parameter" )
-    {}
+    {
+        query_( on_parameter_proc );
+    }
     else if ( var.item == "dataset" )
-    {}
+    {
+        query_( on_dataset_proc );
+    }
     else if ( var.item == "meta" )
-    {}
+    {
+        query_( on_meta_proc );
+    }
     else if ( var.item == "config" )
-    {}
+    {
+        query_( on_config_proc_q );
+    }
     else
     { }
 
@@ -217,84 +247,253 @@ int MRX_T4Service::on_query_proc(  QJsonObject &obj )
 }
 
 //! set
-int MRX_T4Service::on_link_status_proc(  QJsonObject &obj )
+int MRX_T4Service::on_link_status_proc(  QJsonDocument &doc )
 {
     pre_def( Intflink_status );
 
     deload_string( status );
 
+    pLocalServer->mLinkStatus = var.status;
+
+    doc.setObject( obj );
+
     return 0;
 }
 
 //! query
-int MRX_T4Service::on_device_status_proc(  QJsonObject &obj )
+int MRX_T4Service::on_link_status_proc_q(  QJsonDocument &doc )
+{
+    pre_def( Intflink_status );
+
+    var.status = pLocalServer->mLinkStatus;
+
+    json_obj( command );
+    json_obj( status );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
+int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
 {
     pre_def( Intfdevice_status );
 
-
+    //! \todo
     var.status = "stoped";
 
-    obj.insert( "command", var.command );
-    obj.insert( "status", var.status );
+    //! if the bg thread is running or the device is running
+    Q_ASSERT( NULL != m_pExec );
+    if ( m_pExec->isRunning() )
+    { var.status = "running"; }
+    else
+    { var.status = "stoped"; }
+
+    json_obj( command );
+    json_obj( status );
+
+    doc.setObject( obj );
 
     return 0;
 }
 //! query
-int MRX_T4Service::on_exception_proc(  QJsonObject &obj )
+int MRX_T4Service::on_exception_proc(  QJsonDocument &doc )
 {
     pre_def( Intfexception );
 
-    deload_string( cause );
+    var.cause = "unknown";
+
+    json_obj( command );
+    json_obj( cause );
+
+    doc.setObject( obj );
 
     return 0;
 }
 
 //! query
-int MRX_T4Service::on_pose_proc(  QJsonObject &obj )
+int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
 {
     pre_def( Intfpose );
 
-//    deload_string( status );
+    json_obj( command );
+
+    //! local pose
+    QJsonObject pose;
+
+    //! \todo
+    var.pose.x = 0;
+    var.pose.y = 1;
+    var.pose.z = 2;
+    var.pose.w = 3;
+    var.pose.h = 4;
+
+    pose.insert( "x", var.pose.x );
+    pose.insert( "y", var.pose.x );
+    pose.insert( "z", var.pose.x );
+    pose.insert( "w", var.pose.x );
+    pose.insert( "h", var.pose.x );
+
+    obj.insert( "pose", pose );
+
+    doc.setObject( obj );
 
     return 0;
 }
 
 //! query
-int MRX_T4Service::on_parameter_proc(  QJsonObject &obj )
+//double currents[5];
+//double idleCurrents[5];
+//double slowRatios[5];
+//double microSteps[5];
+
+//bool handIos[2];
+//bool distanceSensors[4];
+//bool collide;
+//bool tunnings[5];
+
+#define export_array( array )   QJsonArray local##array;\
+for ( int i = 0; i < sizeof_array( var.array); i++ )\
+{ local##array<<var.array[i]; }\
+obj.insert( #array, local##array );
+int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 {
     pre_def( Intfparameter );
 
+    //! \todo
+    var.currents[0] = 0;
+    var.currents[1] = 1;
+    var.currents[2] = 2;
+    var.currents[3] = 3;
+    var.currents[4] = 4;
 
+    var.idleCurrents[0] = 0;
+    var.idleCurrents[1] = 1;
+    var.idleCurrents[2] = 2;
+    var.idleCurrents[3] = 3;
+    var.idleCurrents[4] = 4;
+
+    var.slowRatios[0] = 50;
+    var.slowRatios[1] = 50;
+    var.slowRatios[2] = 50;
+    var.slowRatios[3] = 38;
+    var.slowRatios[4] = 25;
+
+    var.microSteps[0] = 64;
+    var.microSteps[1] = 64;
+    var.microSteps[2] = 64;
+    var.microSteps[3] = 64;
+    var.microSteps[4] = 64;
+
+    var.handIos[0] = true;
+    var.handIos[1] = false;
+
+    var.distanceSensors[0] = false;
+    var.distanceSensors[1] = false;
+    var.distanceSensors[2] = false;
+    var.distanceSensors[3] = false;
+
+    var.collide = true;
+
+    var.tunnings[0] = true;
+    var.tunnings[1] = true;
+    var.tunnings[2] = true;
+    var.tunnings[3] = true;
+    var.tunnings[4] = true;
+
+    //! output the json
+    json_obj( command );
+
+    export_array( currents );
+    export_array( idleCurrents );
+    export_array( slowRatios );
+    export_array( microSteps );
+
+    export_array( handIos );
+    export_array( distanceSensors );
+    export_array( tunnings );
+
+    json_obj( collide );
+
+    doc.setObject( obj );
 
     return 0;
 }
 
 //! query
-int MRX_T4Service::on_dataset_proc(  QJsonObject &obj )
+int MRX_T4Service::on_dataset_proc( QJsonDocument &doc )
 {
     pre_def( IntfdataSet );
 
-//    deload_string( status );
+    QJsonArray ary;
+    pLocalServer->_dataDataToArray( ary );
+
+    json_obj( command );
+    obj.insert( "points", ary );
+
+    doc.setObject( obj );
 
     return 0;
 }
 
 //! query
-int MRX_T4Service::on_meta_proc(  QJsonObject &obj )
+int MRX_T4Service::on_meta_proc( QJsonDocument &doc )
 {
     pre_def( Intfmeta );
 
-//    deload_string( status );
+    Q_ASSERT( NULL != m_pServer );
+    MRX_T4Server *pServer = (MRX_T4Server*)m_pServer;
+    var.sn = pServer->mSn;
+    var.model = pServer->mModel;
+    var.alias = pServer->mAlias;
+    var.has_hand = pServer->mbHasHand;
+
+    json_obj( command );
+    json_obj( sn );
+    json_obj( model );
+    json_obj( alias );
+
+    json_obj( has_hand );
+
+    //! return obj
+    doc.setObject( obj );
 
     return 0;
 }
-int MRX_T4Service::on_config_proc(  QJsonObject &obj )
+int MRX_T4Service::on_config_proc(  QJsonDocument &doc )
 {
     pre_def( Intfconfig );
 
     deload_double( step );
     deload_double( joint_step );
     deload_double( speed );
+
+    //! config
+    pLocalServer->mStep = var.step;
+    pLocalServer->mJointStep = var.joint_step;
+    pLocalServer->mSpeed = var.speed;
+
+    //! post save
+    //! \todo
+    return pLocalServer->saveConfig();
+}
+
+int MRX_T4Service::on_config_proc_q(  QJsonDocument &doc )
+{
+    pre_def( Intfconfig );
+
+    //! config q
+    var.step = pLocalServer->mStep;
+    var.joint_step = pLocalServer->mJointStep;
+    var.speed = pLocalServer->mSpeed;
+
+    //! export
+    json_obj( command );
+    json_obj( step );
+    json_obj( joint_step );
+    json_obj( speed );
+
+    doc.setObject( obj );
 
     return 0;
 }

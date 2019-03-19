@@ -12,12 +12,17 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    logDbg_Thread();
 
-    logDbg()<<QThread::currentThreadId();
+    int ret;
 
-    MRX_T4Server server;
+    //! servers
+    MRX_T4Server server( 4567 );
+    ret = server.start();
 
-    server.start();
+    ret = a.exec();
 
-    return a.exec();
+    logDbg();
+
+    return ret;
 }

@@ -8,6 +8,9 @@
 #define logWarning()    qDebug()<<"!!!Warning:"<<__FUNCTION__<<__FILE__<<__LINE__
 #define logError()      qDebug()<<"!!!Error:"<<__FUNCTION__<<__FILE__<<__LINE__
 
+#define logDbg_Thread() logDbg();\
+                        logDbg()<<QThread::currentThreadId()<<QThread::currentThread()
+
 //#define logDbg()	QT_NO_QDEBUG_MACRO()<<__FUNCTION__<<__FILE__<<__LINE__
 //#define logWarning()    QT_NO_QDEBUG_MACRO()<<"!!!Warning:"<<__FUNCTION__<<__FILE__<<__LINE__
 //#define logError()      QT_NO_QDEBUG_MACRO()<<"!!!Error:"<<__FUNCTION__<<__FILE__<<__LINE__
@@ -21,4 +24,6 @@
 #define SYS_LOG_V2( v1,v2 )       sysLog( __FILE__, __FUNCTION__, QString::number(__LINE__),\
                                                                 QString::number(v1),\
                                                                 QString::number(v2));
+
+#define sizeof_array( ary )     (int)( sizeof(ary)/sizeof( ary[0] ) )
 #endif
