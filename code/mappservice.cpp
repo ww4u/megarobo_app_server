@@ -210,3 +210,73 @@ void MAppService::slot_event_exit( QByteArray ary )
         ary.clear();
     }
 }
+
+//! thread
+WorkingThread::WorkingThread( QObject *parent ) : QThread( parent )
+{
+}
+
+void WorkingThread::run()
+{
+    ProxyApi* pApi;
+    int ret = -1;
+    while( !mQueue.isEmpty() )
+    {
+        //! rst the ret
+        ret = -1;
+
+        if ( isInterruptionRequested() )
+        {
+            break;
+        }
+
+        pApi = mQueue.dequeue();
+        if ( NULL == pApi || NULL == pApi->m_pObj )
+        { continue; }
+
+        logDbg()<<pApi->mApiName<<"enter";
+
+        //! failed
+        QJsonDocument doc = pApi->mVar.toJsonDocument();
+        ret = (((pApi->m_pObj)->*(pApi->m_pProc)))( doc );
+        if ( ret != 0 )
+        {
+            //! post the event
+        }
+
+        logDbg()<<pApi->mApiName<<"exit";
+
+        delete pApi;
+    }
+
+}
+
+int WorkingThread::attachProc( MAppService *pObj,
+                                MAppService::P_PROC proc,
+                                const QString &name,
+                                QVariant var )
+{
+    ProxyApi *pApi;
+
+    pApi = new ProxyApi();
+    if ( NULL == pApi )
+    { return -1; }
+
+    pApi->m_pObj = pObj;
+    pApi->m_pProc = proc;
+    pApi->mVar = var;
+    pApi->mApiName = name;
+
+    mMutex.lock();
+        mQueue.enqueue( pApi );
+    mMutex.unlock();
+
+    if ( isRunning() )
+    {}
+    else
+    {
+        start();
+    }
+
+    return 0;
+}

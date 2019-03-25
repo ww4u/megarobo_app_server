@@ -7,6 +7,16 @@
 #include "MegaGateway.h"
 
 #include "intfseries.h"
+#include <math.h>
+
+#define deg_to_rad( deg )   ( (deg)* M_PI /180)
+
+#define distance( x, y, z, x1, y1, z1 ) ( sqrt( pow(  x - x1, 2) + \
+                   pow(  y - y1, 2) + \
+                   pow(  z - z1, 2) \
+                   ) )
+
+#define get_bit( d, n )     ( ( d >> n ) & 1 )
 
 #define check_connect() \
 Q_ASSERT ( m_pServer != NULL ); \
@@ -33,6 +43,10 @@ if ( NULL == _pLocalServer )\
 
 #define wave_table          0
 
+#define post_call( api )    Q_ASSERT( NULL != m_pWorkingThread );\
+                            localRet = m_pWorkingThread->attachProc( this, (MAppService::P_PROC)post_##api, QString("post_"#api), QVariant(doc) );\
+                            return localRet;
+
 MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
 {   
     //! fill map
@@ -56,6 +70,21 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
 //    mProcMap.insert( QString("dataset"), (api_type)&api_class::on_dataset_proc);
 //    mProcMap.insert( QString("meta"), (api_type)&api_class::on_meta_proc);
     mProcMap.insert( QString("config"), (api_type)&api_class::on_config_proc);
+
+    m_pWorkingThread = new WorkingThread();
+    Q_ASSERT( NULL != m_pWorkingThread );
+}
+
+MRX_T4Service::~MRX_T4Service()
+{
+    if ( NULL != m_pWorkingThread )
+    {
+        m_pServer->disconnectWorking( m_pWorkingThread );
+
+        m_pWorkingThread->requestInterruption();
+        m_pWorkingThread->wait();
+        delete m_pWorkingThread;
+    }
 }
 
 bool MRX_T4Service::onUserEvent(QEvent *pEvent)
@@ -71,6 +100,15 @@ bool MRX_T4Service::onUserEvent(QEvent *pEvent)
     return true;
 }
 
+void MRX_T4Service::attachServer( MAppServer *pServer )
+{
+    //! attach
+    MAppService::attachServer( pServer );
+
+    //! link the working
+    pServer->connectWorking( m_pWorkingThread );
+}
+
 int MRX_T4Service::on_ack_proc(  QJsonDocument &doc )
 {
     return 0;
@@ -84,27 +122,80 @@ int MRX_T4Service::on_step_proc(  QJsonDocument &doc )
     deload_double( z );
     deload_bool( continous );
 
-    //! \todo
-
-    return 0;
+    post_call( on_step_proc );
 }
+
+int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
+{
+    pre_def( Intfstep );
+
+    deload_double( angle );
+    deload_double( z );
+    deload_bool( continous );
+
+    //! deparse the x/y/z
+    double lx, ly, lz;
+    if ( var.z == 0 )
+    {
+        lx = pLocalServer->mStep * sin( deg_to_rad(var.angle) );
+        ly = pLocalServer->mStep * cos( deg_to_rad(var.angle) );
+        lz = pLocalServer->mStep * var.z;
+    }
+    else
+    {
+        lx = 0;
+        ly = 0;
+        lz = pLocalServer->mStep * var.z;logDbg()<<lz<<pLocalServer->mStep;
+    }
+
+    //! guess t
+    double dist = distance( lx, ly, lz, 0,0,0 );
+    double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->mSpeed;
+
+    localRet = mrgRobotRelMove( local_vi(),
+                                robot_handle(),
+                                wave_table,
+                                lx,
+                                ly,
+                                lz,
+                                t,
+                                120000
+                               );
+
+    return localRet;
+}
+
 int MRX_T4Service::on_joint_step_proc(  QJsonDocument &doc )
 {
     pre_def( Intfjoint_step );
 
-    deload_int( direction );
+    deload_double( value );
+    deload_bool( continous );
+    deload_int( joint );
+
+    post_call( on_joint_step_proc );
+}
+
+int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
+{
+    pre_def( Intfjoint_step );
+
+    deload_double( value );
     deload_bool( continous );
     deload_int( joint );
 
     if ( var.joint == 3 )
     {
+        //! abs value
+        //! \todo
+
         localRet = mrgMRQAdjust( local_vi(),
                                  device_handle(),
                                  3,
                                  wave_table,
-                                 var.direction * 10,
-                                 1,
-                                 1000 );
+                                 var.value * pLocalServer->mJointStep,
+                                 pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                 120000 );
     }
     else if ( var.joint == 4 )
     {
@@ -112,16 +203,26 @@ int MRX_T4Service::on_joint_step_proc(  QJsonDocument &doc )
                                  device_handle(),
                                  4,
                                  wave_table,
-                                 10,
-                                 1,
-                                 1000 );
+                                 var.value * pLocalServer->mJointStep,
+                                 pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                 120000 );
     }
     else
     { return -1; }
 
     return localRet;
 }
+
 int MRX_T4Service::on_action_proc( QJsonDocument &doc )
+{
+    pre_def( Intfaction );
+
+    deload_string( item );
+
+    post_call( on_action_proc );
+}
+
+int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
 {
     pre_def( Intfaction );
 
@@ -130,7 +231,7 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
     if (  var.item == "home" )
     {
         localRet = mrgRobotGoHome( local_vi(),
-                              robot_handle(), 5000 );
+                                   robot_handle(), 120000 );
     }
     else if ( var.item == "emergency_stop" )
     {
@@ -279,12 +380,9 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
 {
     pre_def( Intfdevice_status );
 
-    //! \todo
-    var.status = "stoped";
-
     //! if the bg thread is running or the device is running
     Q_ASSERT( NULL != m_pExec );
-    if ( m_pExec->isRunning() )
+    if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; }
     else
     { var.status = "stoped"; }
@@ -321,24 +419,40 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
     //! local pose
     QJsonObject pose;
 
-    //! \todo
-    var.pose.x = 0;
-    var.pose.y = 1;
-    var.pose.z = 2;
-    var.pose.w = 3;
-    var.pose.h = 4;
+    //! x,y,z now
+    float fx, fy, fz;
+    localRet = mrgGetRobotCurrentPosition( local_vi(),
+                                      robot_handle(),
+
+                                      &fx, &fy, &fz );
+    if ( localRet != 0 )
+    {
+        fx = 0;
+        fy = 0;
+        fz = 0;
+    }
+
+    float fHAngle;
+    localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
+                                        &fHAngle );
+
+    var.pose.x = fx;
+    var.pose.y = fy;
+    var.pose.z = fz;
+    var.pose.w = 0;             //! \todo
+    var.pose.h = fHAngle;
 
     pose.insert( "x", var.pose.x );
-    pose.insert( "y", var.pose.x );
-    pose.insert( "z", var.pose.x );
-    pose.insert( "w", var.pose.x );
-    pose.insert( "h", var.pose.x );
+    pose.insert( "y", var.pose.y );
+    pose.insert( "z", var.pose.z );
+    pose.insert( "w", var.pose.w );
+    pose.insert( "h", var.pose.h );
 
     obj.insert( "pose", pose );
 
     doc.setObject( obj );
 
-    return 0;
+    return localRet;
 }
 
 //! query
@@ -360,58 +474,106 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 {
     pre_def( Intfparameter );
 
-    //! \todo
-    var.currents[0] = 0;
-    var.currents[1] = 1;
-    var.currents[2] = 2;
-    var.currents[3] = 3;
-    var.currents[4] = 4;
+    int iVal;
+    for ( int i = 0; i < 5; i++ )
+    {
+        //! current
+        localRet = mrgMRQDriverCurrent_Query( local_vi(),
+                                         device_handle(),
+                                         i,
+                                         var.currents + i );
+        if ( localRet != 0 )
+        { return localRet; }
 
-    var.idleCurrents[0] = 0;
-    var.idleCurrents[1] = 1;
-    var.idleCurrents[2] = 2;
-    var.idleCurrents[3] = 3;
-    var.idleCurrents[4] = 4;
+        //! idle current
+        localRet = mrgMRQDriverIdleCurrent_Query( local_vi(),
+                                                  device_handle(),
+                                             i,
+                                             var.idle_currents + i );
+        if ( localRet != 0 )
+        { return localRet; }
 
-    var.slowRatios[0] = 50;
-    var.slowRatios[1] = 50;
-    var.slowRatios[2] = 50;
-    var.slowRatios[3] = 38;
-    var.slowRatios[4] = 25;
+        //! step
+        localRet = mrgMRQDriverMicroStep_Query( local_vi(),
+                                          device_handle(),
+                                          i,
+                                          var.micro_steps + i );
 
-    var.microSteps[0] = 64;
-    var.microSteps[1] = 64;
-    var.microSteps[2] = 64;
-    var.microSteps[3] = 64;
-    var.microSteps[4] = 64;
+        //! tunning
+        mrgMRQDriverTuningState_Query( local_vi(),
+                                       device_handle(),
+                                       i,
+                                       &iVal );
+        var.tunning[ i ] = iVal > 0;
 
-    var.handIos[0] = true;
-    var.handIos[1] = false;
+        //!
+        int a, b;
+        mrgMRQMotorGearRatio_Query( local_vi(), device_handle(),
+                                    i,
+                                    &a, &b );
+        var.slow_ratio[i] = a;
+    }
 
-    var.distanceSensors[0] = false;
-    var.distanceSensors[1] = false;
-    var.distanceSensors[2] = false;
-    var.distanceSensors[3] = false;
+    //! dio
+    unsigned short ioState;
+    mrgGetMRQDioState( local_vi(),
+                       device_handle(),
+                       &ioState );
+    var.hand_io[0] = get_bit( ioState, 3 );
+    var.hand_io[1] = get_bit( ioState, 2 );
+
+//    //! \todo
+//    var.currents[0] = 0;
+//    var.currents[1] = 1;
+//    var.currents[2] = 2;
+//    var.currents[3] = 3;
+//    var.currents[4] = 4;
+
+//    var.idle_currents[0] = 0;
+//    var.idle_currents[1] = 1;
+//    var.idle_currents[2] = 2;
+//    var.idle_currents[3] = 3;
+//    var.idle_currents[4] = 4;
+
+//    var.slow_ratio[0] = 50;
+//    var.slow_ratio[1] = 50;
+//    var.slow_ratio[2] = 50;
+//    var.slow_ratio[3] = 38;
+//    var.slow_ratio[4] = 25;
+
+//    var.micro_steps[0] = 64;
+//    var.micro_steps[1] = 64;
+//    var.micro_steps[2] = 64;
+//    var.micro_steps[3] = 64;
+//    var.micro_steps[4] = 64;
+
+//    var.hand_io[0] = true;
+//    var.hand_io[1] = false;
+
+//    var.distance_sensors[0] = false;
+//    var.distance_sensors[1] = false;
+//    var.distance_sensors[2] = false;
+//    var.distance_sensors[3] = false;
 
     var.collide = true;
 
-    var.tunnings[0] = true;
-    var.tunnings[1] = true;
-    var.tunnings[2] = true;
-    var.tunnings[3] = true;
-    var.tunnings[4] = true;
+//    var.tunning[0] = true;
+//    var.tunning[1] = true;
+//    var.tunning[2] = true;
+//    var.tunning[3] = true;
+//    var.tunning[4] = true;
 
     //! output the json
     json_obj( command );
 
     export_array( currents );
-    export_array( idleCurrents );
-    export_array( slowRatios );
-    export_array( microSteps );
+    export_array( idle_currents );
+    export_array( slow_ratio );
+    export_array( micro_steps );
 
-    export_array( handIos );
-    export_array( distanceSensors );
-    export_array( tunnings );
+    export_array( hand_io );
+    export_array( distance_sensors );
+    export_array( tunning );
 
     json_obj( collide );
 

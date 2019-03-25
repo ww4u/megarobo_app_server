@@ -7,6 +7,7 @@
 #include "mappservice.h"
 
 class MAppServer;
+class WorkingThread;
 
 class MTcpServer : public QTcpServer
 {

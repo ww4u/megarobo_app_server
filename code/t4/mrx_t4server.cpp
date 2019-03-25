@@ -46,15 +46,15 @@ int MRX_T4Server::start()
 
 int MRX_T4Server::open()
 {
-#ifdef QT_DEBUG
-    mVi = 1;
-    return 0;
-#endif
+//#ifdef QT_DEBUG
+//    mVi = 1;
+//    return 0;
+//#endif
 
     int ret;
 
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );
+    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
     if ( vi > 0 )
     { mVi = vi; }
     else
@@ -77,6 +77,13 @@ int MRX_T4Server::open()
     mDeviceHandle = deviceHandles[0];
 
     //! \todo update para
+    char idns[128];
+    ret = mrgGateWayIDNQuery( mVi, idns );
+    if ( ret == 0 )
+    {
+        mSn = QString( idns );
+        logDbg()<<mSn;
+    }
 
     return 0;
 }
@@ -88,6 +95,20 @@ void MRX_T4Server::close()
         mrgCloseGateWay( mVi );
         mVi = 0;
     }
+}
+
+MAppServer::ServerStatus MRX_T4Server::status()
+{
+    //! \todo the device status
+
+    //! the self status
+    for ( int i = 0; i < mWorkings.size(); i++ )
+    {
+        if ( mWorkings.at(i)->isRunning() )
+        { return state_working; }
+    }
+
+    return state_idle;
 }
 
 int MRX_T4Server::load()

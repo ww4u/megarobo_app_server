@@ -46,6 +46,8 @@ public:
     double mJointStep;
     double mSpeed;      //! percent
 
+    double mMaxJointSpeed, mMaxBodySpeed;
+
                         //! points
     QList<ObjPoint *> mPoints;
 };

@@ -27,6 +27,11 @@ void T4Para::reset()
     mStep = 10;
     mJointStep = 5;
     mSpeed = 0.2;
+
+    mMaxBodySpeed = 100;    //! mm/s
+    mMaxJointSpeed = 100;   //! degree/s
+
+    mLinkStatus = "idle";
 }
 
 int T4Para::saveConfig()
@@ -37,10 +42,16 @@ int T4Para::saveConfig()
     var.joint_step = mJointStep;
     var.speed = mSpeed;
 
+    var.max_body_speed = mMaxBodySpeed;
+    var.max_joint_speed = mMaxJointSpeed;
+
     QJsonObject obj;
     json_obj( step );
     json_obj( joint_step );
     json_obj( speed );
+
+    json_obj( max_body_speed );
+    json_obj( max_joint_speed );
 
     //! save
     QJsonDocument doc( obj );
@@ -87,12 +98,17 @@ int T4Para::loadConfig()
         deload_double( step );
         deload_double( joint_step );
         deload_double( speed );
+
+        deload_double( max_joint_speed );
+        deload_double( max_body_speed )
     }
 
     //! recover
     mStep = var.step;
     mJointStep = var.joint_step;
     mSpeed = var.speed;
+    mMaxJointSpeed = var.max_joint_speed;
+    mMaxBodySpeed = var.max_body_speed;
 
     return 0;
 }

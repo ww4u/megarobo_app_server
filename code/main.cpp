@@ -12,17 +12,21 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    logDbg_Thread();
+    qInfo( qApp->applicationVersion().toLatin1().data() );
 
     int ret;
 
     //! servers
-    MRX_T4Server server( 4567 );
+//    MRX_T4Server server( 2345 );
+    MRX_T4Server server( 50000 );
     ret = server.start();
+    logDbg()<<ret;
+
+    ret = server.open();
+    logDbg()<<ret;
 
     ret = a.exec();
-
-    logDbg();
+    logDbg()<<ret;
 
     return ret;
 }

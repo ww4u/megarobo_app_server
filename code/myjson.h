@@ -2,29 +2,29 @@
 #define MYJSON_H
 
 #define __deload_double( obj, v, item )   if ( obj.contains( #item ) )\
-                                { v.item = obj.value( #item ).toDouble(); logDbg()<<v.item; } \
+                                { v.item = obj.value( #item ).toDouble(); logDbg()<<#item<<v.item; } \
                                 else \
                                 { return -1; }
 
 #define _deload_double( obj, item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toDouble(); logDbg()<<var.item; } \
+                                { var.item = obj.value( #item ).toDouble(); logDbg()<<#item<<var.item; } \
                                 else \
                                 { return -1; }
 #define _deload_string( obj, item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toString(); logDbg()<<var.item; } \
+                                { var.item = obj.value( #item ).toString(); logDbg()<<#item<<var.item; } \
                                 else \
                                 { return -1; }
 #define _deload_int( obj, item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toInt(); logDbg()<<var.item; } \
+                                { var.item = obj.value( #item ).toInt(); logDbg()<<#item<<var.item; } \
                                 else \
                                 { return -1; }
 #define _deload_bool( obj, item )   if ( obj.contains( #item ) )\
-                                { var.item = obj.value( #item ).toBool(); logDbg()<<var.item; } \
+                                { var.item = obj.value( #item ).toBool(); logDbg()<<#item<<var.item; } \
                                 else \
-                                { return -1; }
+                                { logDbg()<<#item;return -1; }
 
 #define _deload_json_obj( jsonObj, obj, item )   if ( obj.contains( #item ) )\
-                                { jsonObj = obj.value( #item ).toObject(); logDbg()<<jsonObj; } \
+                                { jsonObj = obj.value( #item ).toObject(); logDbg()<<#item<<jsonObj; } \
                                 else \
                                 { return -1; }
 

@@ -15,6 +15,8 @@ public:
 
     virtual int open();
     virtual void close();
+
+    virtual MAppServer::ServerStatus status();
 public:
     int load();
 

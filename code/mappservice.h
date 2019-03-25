@@ -9,6 +9,8 @@
 #include "mappexec.h"
 
 class MAppServer;
+class WorkingThread;
+class ProxyApi;
 
 class MServiceEvent : public QEvent
 {
@@ -27,7 +29,7 @@ class MAppService : public QThread
     Q_OBJECT
 
 public:
-    typedef int (MAppService::*P_PROC)( const QJsonDocument &obj  );
+    typedef int (MAppService::*P_PROC)( QJsonDocument &obj  );
 
 public:
     explicit MAppService( qintptr ptr, QObject *parent = nullptr);
@@ -39,7 +41,7 @@ public:
     virtual bool onUserEvent( QEvent *pEvent );
 
 public:
-    void attachServer( MAppServer *pServer );
+    virtual void attachServer( MAppServer *pServer );
 
 protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
@@ -60,6 +62,7 @@ protected:
     MAppServer *m_pServer;
     MAppExec   *m_pExec;            //! executor service
 
+    WorkingThread *m_pWorkingThread;
 signals:
 
 public slots:
@@ -70,6 +73,42 @@ public slots:
 
     void slot_event_enter();
     void slot_event_exit( QByteArray ary );
+};
+
+class WorkingThread : public QThread
+{
+public:
+    WorkingThread( QObject *parent = nullptr );
+
+protected:
+    virtual void run();
+
+public:
+    int attachProc( MAppService *pObj,
+                     MAppService::P_PROC proc,
+                     const QString &name,
+                     QVariant var );
+
+protected:
+    QQueue<ProxyApi*> mQueue;
+    QMutex mMutex;
+};
+
+class ProxyApi
+{
+public:
+    MAppService *m_pObj;
+    MAppService::P_PROC m_pProc;
+    QVariant mVar;
+    QString mApiName;
+
+public:
+    ProxyApi()
+    {
+        m_pObj = NULL;
+        m_pProc = NULL;
+    }
+
 };
 
 #endif // MAPPSERVICE_H

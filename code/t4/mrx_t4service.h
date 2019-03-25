@@ -7,34 +7,45 @@ class MRX_T4Service : public MAppService
 {
 public:
     MRX_T4Service( qintptr ptr, QObject *parent = nullptr );
-
-
-
+    ~MRX_T4Service();
 public:
-    bool onUserEvent(QEvent *pEvent);
+    virtual bool onUserEvent(QEvent *pEvent);
+public:
+    virtual void attachServer( MAppServer *pServer );
 
 protected:
-    int on_ack_proc( QJsonDocument &obj );
-    int on_step_proc(  QJsonDocument &obj );
-    int on_joint_step_proc(  QJsonDocument &obj );
-    int on_action_proc(  QJsonDocument &obj );
+    int on_ack_proc( QJsonDocument &doc );
 
-    int on_indicator_proc(  QJsonDocument &obj );
-    int on_add_proc(  QJsonDocument &obj );
-    int on_query_proc(  QJsonDocument &obj );
-    int on_link_status_proc(  QJsonDocument &obj );
+    int on_step_proc(  QJsonDocument &doc );
+    int post_on_step_proc(  QJsonDocument &doc );
 
-    int on_device_status_proc(  QJsonDocument &obj );
-    int on_exception_proc(  QJsonDocument &obj );
-    int on_pose_proc(  QJsonDocument &obj );
-    int on_parameter_proc(  QJsonDocument &obj );
+    int on_joint_step_proc(  QJsonDocument &doc );
+    int post_on_joint_step_proc(  QJsonDocument &doc );
 
-    int on_dataset_proc(  QJsonDocument &obj );
-    int on_meta_proc(  QJsonDocument &obj );
-    int on_config_proc(  QJsonDocument &obj );
+    int on_action_proc(  QJsonDocument &doc );
+    int post_on_action_proc(  QJsonDocument &doc );
 
-    int on_config_proc_q(  QJsonDocument &obj );
-    int on_link_status_proc_q(  QJsonDocument &obj );
+    int on_indicator_proc(  QJsonDocument &doc );
+    int post_on_indicator_proc(  QJsonDocument &doc );
+
+    int on_add_proc(  QJsonDocument &doc );
+    int post_on_add_proc(  QJsonDocument &doc );
+
+    int on_query_proc(  QJsonDocument &doc );
+    int on_link_status_proc(  QJsonDocument &doc );
+
+    int on_device_status_proc(  QJsonDocument &doc );
+    int on_exception_proc(  QJsonDocument &doc );
+    int on_pose_proc(  QJsonDocument &doc );
+    int on_parameter_proc(  QJsonDocument &doc );
+
+    int on_dataset_proc(  QJsonDocument &doc );
+    int on_meta_proc(  QJsonDocument &doc );
+    int on_config_proc(  QJsonDocument &doc );
+    int post_on_config_proc(  QJsonDocument &doc );
+
+    int on_config_proc_q(  QJsonDocument &doc );
+    int on_link_status_proc_q(  QJsonDocument &doc );
 
 protected:
 

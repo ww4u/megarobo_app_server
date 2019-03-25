@@ -48,7 +48,7 @@ public:
     Intfjoint_step( const QString cmd="joint_step" ) : IntfObj( cmd )
     {}
 public:
-    int direction;
+    double value;
     int joint;
     bool continous;
 };
@@ -132,21 +132,21 @@ public:
     Intfparameter( const QString cmd="parameter" ) : IntfObj( cmd )
     {}
 public:
-    double currents[5];
-    double idleCurrents[5];
-    double slowRatios[5];
-    double microSteps[5];
+    float currents[5];
+    float idle_currents[5];
+    float slow_ratio[5];
+    int micro_steps[5];
 
-    bool handIos[2];
-    bool distanceSensors[4];
+    bool hand_io[2];
+    bool distance_sensors[4];
     bool collide;
-    bool tunnings[5];
+    bool tunning[5];
 };
 
 class IntfdataSet : public IntfObj
 {
 public:
-    IntfdataSet( const QString cmd="dataSet" ) : IntfObj( cmd )
+    IntfdataSet( const QString cmd="dataset" ) : IntfObj( cmd )
     {}
 public:
     ObjPoint mPoints;
@@ -171,6 +171,8 @@ public:
     double step;
     double joint_step;
     double speed;
+    double max_joint_speed;
+    double max_body_speed;
 };
 
 #endif // INTFSERIES_H
