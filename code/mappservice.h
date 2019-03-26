@@ -47,6 +47,8 @@ protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
 
 protected:
+    void dataProc( );
+
     void proc( QJsonDocument &jsonObj );
     void output( const QJsonDocument &obj );
 
@@ -54,6 +56,7 @@ protected:
     qintptr mPtr;
     QTcpSocket *m_pSocket;
 
+    QByteArray mRecvCache;
     QByteArray mOutput;
 
 protected:

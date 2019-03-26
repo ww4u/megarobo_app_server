@@ -45,7 +45,7 @@ HEADERS += \
     t4/mrx_t4server.h
 
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
-INCLUDEPATH += "G:/work/mct/source/device"
+INCLUDEPATH += "G:/work/mct/source/device/libMegaGateway/src"
 
 LIBS += -L"../code/lib"
 LIBS += -lmrx-device

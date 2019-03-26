@@ -116,6 +116,45 @@ void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
     m_pExec->postEvent( pEvent );
 }
 
+void MAppService::dataProc( )
+{
+    //! find the '#' in the array
+
+    QByteArray packet;
+    QJsonDocument doc;
+    int index;
+    do
+    {
+        index = mRecvCache.indexOf( '#' );
+        if ( index >= 0 )
+        {
+            packet = mRecvCache.mid( 0, index + 1 );
+            mRecvCache.remove( 0, index + 1 );
+
+            //! remove the '#'
+            packet.remove( index, 1 );
+
+            //! parse the packet
+            doc = QJsonDocument::fromJson( packet );
+            if ( doc.isObject() )
+            {
+                postEvent( 1, doc );
+            }
+            else if ( doc.isArray() )
+            {
+                postEvent( 2, doc );
+            }
+            else
+            {
+                logDbg()<<"Invalid cmd";
+            }
+        }
+        else
+        {}
+
+    }while( index != -1 );
+}
+
 //! proc
 void MAppService::proc( QJsonDocument &doc )
 {
@@ -154,37 +193,19 @@ void MAppService::proc( QJsonDocument &doc )
 void MAppService::output( const QJsonDocument &doc )
 {
     mOutput = doc.toJson();
+    //! \note append the terminator
+    mOutput.append( '#' );
 }
 
 void MAppService::slot_dataIn( )
 {
     QByteArray ary = m_pSocket->readAll();
+logDbg();
+    //! receive cache
+    mRecvCache.append( ary );
 
-    logDbg_Thread();
-    logDbg()<<ary;
+    dataProc();
 
-    QJsonDocument doc = QJsonDocument::fromJson( ary );
-    if ( doc.isObject() )
-    {
-        postEvent( 1, doc );
-    }
-    else if ( doc.isArray() )
-    {
-        postEvent( 2, doc );
-    }
-    else
-    {
-        logDbg()<<"Invalid cmd";
-    }
-
-    //! output
-    //! \todo output the socket
-//    if ( mOutput.size() > 0 )
-//    {
-//        m_pSocket->write( mOutput );
-//        m_pSocket->flush();
-//        mOutput.clear();
-//    }
 }
 
 void MAppService::slot_disconnect()

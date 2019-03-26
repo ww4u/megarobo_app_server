@@ -257,6 +257,10 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
                                );
 
     }
+    else if ( var.item == "test" )
+    {
+        logDbg()<<doc;
+    }
     else
     {}
 

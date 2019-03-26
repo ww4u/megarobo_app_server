@@ -2,7 +2,7 @@
 #include "mrx_t4tcpserver.h"
 
 #include "../mydebug.h"
-#include "../device/MegaGateway.h"
+#include "MegaGateway.h"
 
 MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServer( pParent )
 {
@@ -46,10 +46,10 @@ int MRX_T4Server::start()
 
 int MRX_T4Server::open()
 {
-//#ifdef QT_DEBUG
-//    mVi = 1;
-//    return 0;
-//#endif
+#ifdef QT_DEBUG
+    mVi = 1;
+    return 0;
+#endif
 
     int ret;
 

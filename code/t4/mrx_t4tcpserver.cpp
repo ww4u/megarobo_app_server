@@ -2,7 +2,7 @@
 #include "mrx_t4service.h"
 
 #include "../mydebug.h"
-#include "../device/MegaGateway.h"
+#include "MegaGateway.h"
 
 MRX_T4TcpServer::MRX_T4TcpServer( QObject *parent ) : MTcpServer( parent )
 {   
