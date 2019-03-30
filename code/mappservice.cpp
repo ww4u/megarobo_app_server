@@ -12,10 +12,14 @@
 
 //! create the type
 MServiceEvent::MServiceEvent( int tpe ) : QEvent( QEvent::Type(tpe) )
-{}
+{
+    mTs = QDateTime::currentMSecsSinceEpoch();
+}
 
 void MServiceEvent::setPara( QVariant v1, QVariant v2, QVariant v3 )
 {
+    mTs = QDateTime::currentMSecsSinceEpoch();
+
     mVar1 = v1;
     mVar2 = v2;
     mVar3 = v3;
@@ -40,6 +44,8 @@ MAppService::~MAppService()
         m_pExec->requestInterruption();
         delete m_pExec;
     }
+
+    qDeleteAll( mProcMap );
 }
 
 void MAppService::run()
@@ -116,6 +122,27 @@ void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
     m_pExec->postEvent( pEvent );
 }
 
+int MAppService::attachProc( const QString &name, MAppService::P_PROC proc, quint64 tmo )
+{
+    ProxyApi *pApi;
+
+    pApi = new ProxyApi();
+    if ( NULL == pApi )
+    { return -1; }
+
+    pApi->mApiName = name;
+    pApi->mTmo = tmo;
+    pApi->m_pProc = proc;
+
+    pApi->m_pObj = this;
+    pApi->mLastTs = 0;
+
+    //! inser the map
+    mProcMap.insert( name, pApi );
+
+    return 0;
+}
+
 void MAppService::dataProc( )
 {
     //! find the '#' in the array
@@ -156,7 +183,7 @@ void MAppService::dataProc( )
 }
 
 //! proc
-void MAppService::proc( QJsonDocument &doc )
+void MAppService::proc( QJsonDocument &doc, quint64 &ts )
 {
     QJsonObject jsonObj = doc.object();
 
@@ -171,7 +198,8 @@ void MAppService::proc( QJsonDocument &doc )
         return;
     }
 
-    QMapIterator< QString, P_PROC > iter( mProcMap );
+    QMapIterator< QString, ProxyApi* > iter( mProcMap );
+    ProxyApi *pApi;
     int ret;
     while( iter.hasNext() )
     {
@@ -180,9 +208,37 @@ void MAppService::proc( QJsonDocument &doc )
         //! match
         if ( QString::compare( iter.key(), strCmdName ) == 0 )
         {
-            ret = (this->*(iter.value()))( doc );
+//            ret = (this->*(iter.value()))( doc );
+//            if ( ret != 0 )
+//            { logDbg()<<ret; }
+//            return;
+
+            pApi = iter.value();
+            Q_ASSERT( NULL != pApi );
+
+            //! check time -- time filter?
+            if ( pApi->mTmo > 0 )
+            {
+                //! timeout
+                if ( ts > ( pApi->mLastTs + pApi->mTmo ) )
+                {}
+                //! filtered
+                else
+                {
+                    logDbg()<<"filtered";
+                    return;
+                }
+            }
+            else
+            {}
+
+            //! save the last ts
+            pApi->mLastTs = ts;
+
+            ret = (this->*(pApi->m_pProc))( doc );
             if ( ret != 0 )
             { logDbg()<<ret; }
+
             return;
         }
     }
@@ -194,13 +250,13 @@ void MAppService::output( const QJsonDocument &doc )
 {
     mOutput = doc.toJson();
     //! \note append the terminator
-    mOutput.append( '#' );
+//    mOutput.append( '#' );
 }
 
 void MAppService::slot_dataIn( )
 {
     QByteArray ary = m_pSocket->readAll();
-logDbg();
+logDbg()<<ary;
     //! receive cache
     mRecvCache.append( ary );
 
@@ -255,18 +311,25 @@ void WorkingThread::run()
         if ( NULL == pApi || NULL == pApi->m_pObj )
         { continue; }
 
-        logDbg()<<pApi->mApiName<<"enter";
-
-        //! failed
-        QJsonDocument doc = pApi->mVar.toJsonDocument();
-        ret = (((pApi->m_pObj)->*(pApi->m_pProc)))( doc );
-        if ( ret != 0 )
+        try
         {
-            //! post the event
+            logDbg()<<pApi->mApiName<<"enter";
+
+            //! failed
+            QJsonDocument doc = pApi->mVar.toJsonDocument();
+            ret = (((pApi->m_pObj)->*(pApi->m_pProc)))( doc );
+            if ( ret != 0 )
+            {
+                //! post the event
+            }
+
+            logDbg()<<pApi->mApiName<<"exit";
         }
-
-        logDbg()<<pApi->mApiName<<"exit";
-
+        catch( QException &e )
+        {
+            delete pApi;
+            break;
+        }
         delete pApi;
     }
 

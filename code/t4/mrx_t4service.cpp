@@ -52,15 +52,15 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
     //! fill map
 //    mProcMap.insert( QString("step"), (MAppService::P_PROC)&MRX_T4Service::on_step_proc);
 
-    mProcMap.insert( QString("ack"), (api_type)&api_class::on_ack_proc);
-    mProcMap.insert( QString("step"), (api_type)&api_class::on_step_proc);
-    mProcMap.insert( QString("joint_step"), (api_type)&api_class::on_joint_step_proc);
-    mProcMap.insert( QString("action"), (api_type)&api_class::on_action_proc);
+    attachProc( QString("ack"), (api_type)&api_class::on_ack_proc);
+    attachProc( QString("step"), (api_type)&api_class::on_step_proc, 1000 );
+    attachProc( QString("joint_step"), (api_type)&api_class::on_joint_step_proc, 1000 );
+    attachProc( QString("action"), (api_type)&api_class::on_action_proc);
 
-    mProcMap.insert( QString("indicator"), (api_type)&api_class::on_indicator_proc);
-    mProcMap.insert( QString("add"), (api_type)&api_class::on_add_proc);
-    mProcMap.insert( QString("query"), (api_type)&api_class::on_query_proc);
-    mProcMap.insert( QString("link_status"), (api_type)&api_class::on_link_status_proc);
+    attachProc( QString("indicator"), (api_type)&api_class::on_indicator_proc);
+    attachProc( QString("add"), (api_type)&api_class::on_add_proc);
+    attachProc( QString("query"), (api_type)&api_class::on_query_proc);
+    attachProc( QString("link_status"), (api_type)&api_class::on_link_status_proc);
 
 //    mProcMap.insert( QString("device_status"), (api_type)&api_class::on_device_status_proc);
 //    mProcMap.insert( QString("exception"), (api_type)&api_class::on_exception_proc);
@@ -69,7 +69,7 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
 
 //    mProcMap.insert( QString("dataset"), (api_type)&api_class::on_dataset_proc);
 //    mProcMap.insert( QString("meta"), (api_type)&api_class::on_meta_proc);
-    mProcMap.insert( QString("config"), (api_type)&api_class::on_config_proc);
+    attachProc( QString("config"), (api_type)&api_class::on_config_proc);
 
     m_pWorkingThread = new WorkingThread();
     Q_ASSERT( NULL != m_pWorkingThread );
@@ -95,7 +95,7 @@ bool MRX_T4Service::onUserEvent(QEvent *pEvent)
     QJsonDocument localDoc = pLocalEvent->mVar1.toJsonDocument();
 
     //! proc the json obj
-    proc( localDoc );
+    proc( localDoc, pLocalEvent->mTs );
 
     return true;
 }
@@ -138,7 +138,7 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     if ( var.z == 0 )
     {
         lx = pLocalServer->mStep * sin( deg_to_rad(var.angle) );
-        ly = pLocalServer->mStep * cos( deg_to_rad(var.angle) );
+        ly = - pLocalServer->mStep * cos( deg_to_rad(var.angle) );
         lz = pLocalServer->mStep * var.z;
     }
     else
@@ -189,12 +189,13 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
         //! abs value
         //! \todo
 
+        //! norminal angle
         localRet = mrgMRQAdjust( local_vi(),
                                  device_handle(),
                                  3,
                                  wave_table,
-                                 var.value * pLocalServer->mJointStep,
-                                 pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                 var.value,
+                                 10,
                                  120000 );
     }
     else if ( var.joint == 4 )
@@ -219,7 +220,33 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
 
     deload_string( item );
 
-    post_call( on_action_proc );
+    if (  var.item == "home" )
+    {
+        //! \todo
+        //! stop the mission thread
+        Q_ASSERT( NULL != m_pWorkingThread );
+        m_pWorkingThread->requestInterruption();
+
+        //! \note force stop
+        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+
+        post_call( on_action_proc );
+    }
+    else if ( var.item == "emergency_stop" )
+    {
+        //! \todo
+        //! stop the mission thread
+        Q_ASSERT( NULL != m_pWorkingThread );
+        m_pWorkingThread->requestInterruption();
+
+        //! \note force stop
+        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+    }
+    else
+    {
+        post_call( on_action_proc );
+    }
+
 }
 
 int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
@@ -230,16 +257,18 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
 
     if (  var.item == "home" )
     {
+        //! \todo stop and home
         localRet = mrgRobotGoHome( local_vi(),
                                    robot_handle(), 120000 );
     }
     else if ( var.item == "emergency_stop" )
     {
+        //! \todo force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
     }
     else if ( var.item == "stop" )
     {
-        //! \todo stop all
+        //! \todo normal stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
 //        ret = mrgRobotToolStop( local_vi(),
 //                                robot_handle() );

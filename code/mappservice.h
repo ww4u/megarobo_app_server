@@ -20,6 +20,7 @@ public:
     void setPara( QVariant v1, QVariant v2=0, QVariant v3=0 );
 
 public:
+    quint64 mTs;
     QVariant mVar1, mVar2, mVar3;
 };
 
@@ -47,9 +48,11 @@ protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
 
 protected:
+    int attachProc( const QString &name, MAppService::P_PROC proc, quint64 tmo = 0 );
+
     void dataProc( );
 
-    void proc( QJsonDocument &jsonObj );
+    void proc( QJsonDocument &jsonObj, quint64 &ts );
     void output( const QJsonDocument &obj );
 
 protected:
@@ -60,7 +63,8 @@ protected:
     QByteArray mOutput;
 
 protected:
-    QMap< QString, P_PROC > mProcMap;
+//    QMap< QString, P_PROC > mProcMap;
+    QMap< QString, ProxyApi * > mProcMap;
 
     MAppServer *m_pServer;
     MAppExec   *m_pExec;            //! executor service
@@ -105,11 +109,17 @@ public:
     QVariant mVar;
     QString mApiName;
 
+    quint64 mTmo;       //! 0 no timeout needed
+    quint64 mLastTs;    //! latest timestamp
+
 public:
     ProxyApi()
     {
         m_pObj = NULL;
         m_pProc = NULL;
+
+        mTmo = 0;
+        mLastTs = 0;
     }
 
 };

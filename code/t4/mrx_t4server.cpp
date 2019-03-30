@@ -12,7 +12,8 @@ MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServ
         mPorts<<(portBase+i);
     }
 
-    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive
+//    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive
+    mAddr = "TCPIP0::169.254.140.15::inst0::INSTR";
 }
 
 int MRX_T4Server::start()
@@ -46,15 +47,15 @@ int MRX_T4Server::start()
 
 int MRX_T4Server::open()
 {
-#ifdef QT_DEBUG
-    mVi = 1;
-    return 0;
-#endif
+//#ifdef QT_DEBUG
+//    mVi = 1;
+//    return 0;
+//#endif
 
     int ret;
 
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
+    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 500 );logDbg()<<vi;
     if ( vi > 0 )
     { mVi = vi; }
     else

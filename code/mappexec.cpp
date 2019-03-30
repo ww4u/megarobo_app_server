@@ -72,15 +72,6 @@ bool MAppExec::onUserEvent( QEvent *pEvent )
         //! service exec
         m_pService->onUserEvent( pEvent );
 
-//        //! output the socket
-//        if ( m_pService->mOutput.size() > 0 )
-//        {
-//            if ( m_pOutSocket != NULL )
-//            {
-//                m_pOutSocket->write( m_pService->mOutput );
-//                m_pOutSocket->flush();
-//            }
-//        }
     }
 
     return true;
