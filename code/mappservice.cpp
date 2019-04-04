@@ -9,6 +9,9 @@
 #include <QCoreApplication>
 
 #include "mappexec.h"
+#include "syspara.h"
+#include "intfobj.h"
+#include "myjson.h"
 
 //! create the type
 MServiceEvent::MServiceEvent( int tpe ) : QEvent( QEvent::Type(tpe) )
@@ -32,6 +35,11 @@ MAppService::MAppService(qintptr ptr, QObject *parent) : QThread(parent)
 
     m_pServer = NULL;
     m_pExec = NULL;
+
+    m_pTimer = NULL;
+    mbTmo = false;
+
+    mTimeout = 0;
 }
 
 MAppService::~MAppService()
@@ -98,6 +106,11 @@ void MAppService::attachServer( MAppServer *pServer )
 
     m_pServer = pServer;
 }
+
+void MAppService::setTimeout( int tmo )
+{ mTimeout = tmo; }
+int MAppService::timeout()
+{ return mTimeout; }
 
 //! post event
 void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
@@ -208,11 +221,6 @@ void MAppService::proc( QJsonDocument &doc, quint64 &ts )
         //! match
         if ( QString::compare( iter.key(), strCmdName ) == 0 )
         {
-//            ret = (this->*(iter.value()))( doc );
-//            if ( ret != 0 )
-//            { logDbg()<<ret; }
-//            return;
-
             pApi = iter.value();
             Q_ASSERT( NULL != pApi );
 
@@ -251,17 +259,48 @@ void MAppService::output( const QJsonDocument &doc )
     mOutput = doc.toJson();
     //! \note append the terminator
 //    mOutput.append( '#' );
+
+    sysLogOut( mOutput );
+}
+
+void MAppService::resetTimeout()
+{
+    if ( mTimeout > 0 )
+    {}
+    else
+    { return; }
+
+    //! timer
+    if ( NULL == m_pTimer )
+    {
+        m_pTimer = new QTimer( this );
+        if ( NULL == m_pTimer )
+        { return; }
+
+        connect( m_pTimer, SIGNAL(timeout()),
+                 this, SLOT(slot_timeout()) );
+    }
+
+    mbTmo = false;
+    m_pTimer->start( mTimeout );
+    logDbg_Thread();
 }
 
 void MAppService::slot_dataIn( )
 {
     QByteArray ary = m_pSocket->readAll();
-logDbg()<<ary;
+
+    if ( sysHasArg("-showin") )
+    { logDbg()<<ary; }
+
     //! receive cache
     mRecvCache.append( ary );
 
-    dataProc();
+    resetTimeout();
 
+    sysLogIn( ary );
+
+    dataProc();
 }
 
 void MAppService::slot_disconnect()
@@ -269,7 +308,43 @@ void MAppService::slot_disconnect()
 
 void MAppService::slot_timeout()
 {
+    IntfNotify var;
+
+    //! have timeout
+    if ( mbTmo )
+    {
+        var.code = IntfNotify::e_notify_socket_idle_quit;
+        var.message = "socket idle close";
+    }
+    else
+    {
+        var.code = IntfNotify::e_notify_socket_idle_timeout;
+        var.message = "socket idle timeout";
+    }
+
+    //! obj
+    QJsonObject obj;
+    json_obj( command );
+    json_obj( message );
+    json_obj( code );
+
+    //! doc
+    QJsonDocument doc;
+    doc.setObject( obj );
+
+    //! output
+    output( doc );
+
+    //! flush
+    slot_event_exit( mOutput );
+
+    if ( mbTmo )
+    { quit(); }
+    else
+    {}
+
     logDbg_Thread();
+    mbTmo = true;
 }
 
 void MAppService::slot_event_enter()
@@ -326,8 +401,12 @@ void WorkingThread::run()
             logDbg()<<pApi->mApiName<<"exit";
         }
         catch( QException &e )
-        {
+        {   
             delete pApi;
+
+            qDeleteAll( mQueue );
+            mQueue.clear();
+
             break;
         }
         delete pApi;

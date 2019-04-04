@@ -168,6 +168,7 @@ public:
     Intfconfig( const QString cmd="config" ) : IntfObj( cmd )
     {}
 public:
+    int timeout;
     double step;
     double joint_step;
     double speed;

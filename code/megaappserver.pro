@@ -27,7 +27,8 @@ SOURCES += main.cpp \
     mtcpserver.cpp \
     t4/mrx_t4tcpserver.cpp \
     mappserver.cpp \
-    t4/mrx_t4server.cpp
+    t4/mrx_t4server.cpp \
+    syspara.cpp
 
 HEADERS += \
     mappservice.h \
@@ -42,7 +43,8 @@ HEADERS += \
     mtcpserver.h \
     t4/mrx_t4tcpserver.h \
     mappserver.h \
-    t4/mrx_t4server.h
+    t4/mrx_t4server.h \
+    syspara.h
 
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
 INCLUDEPATH += "G:/work/mct/source/device/libMegaGateway/src"

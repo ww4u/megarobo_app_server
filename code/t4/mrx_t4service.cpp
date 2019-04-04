@@ -195,7 +195,7 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                                  3,
                                  wave_table,
                                  var.value,
-                                 10,
+                                 var.value / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed ,
                                  120000 );
     }
     else if ( var.joint == 4 )
@@ -276,7 +276,6 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     }
     else if ( var.item == "package" )
     {
-
         localRet = mrgGetRobotFold( local_vi(),robot_handle(),
                                wave_table,
                                0,

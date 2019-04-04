@@ -24,9 +24,11 @@ void T4Para::reset()
     mAlias = "myROBOT";
     mbHasHand = true;
 
+    mTickTmo = 0;
+
     mStep = 10;
     mJointStep = 5;
-    mSpeed = 0.2;
+    mSpeed = 1.0;
 
     mMaxBodySpeed = 100;    //! mm/s
     mMaxJointSpeed = 100;   //! degree/s
@@ -38,6 +40,8 @@ int T4Para::saveConfig()
 {
     Intfconfig var;
 
+    var.timeout = mTickTmo;
+
     var.step = mStep;
     var.joint_step = mJointStep;
     var.speed = mSpeed;
@@ -46,6 +50,7 @@ int T4Para::saveConfig()
     var.max_joint_speed = mMaxJointSpeed;
 
     QJsonObject obj;
+    json_obj( timeout );
     json_obj( step );
     json_obj( joint_step );
     json_obj( speed );
@@ -95,6 +100,7 @@ int T4Para::loadConfig()
         QJsonObject obj;
 
         obj = doc.object();
+        deload_int( timeout );
         deload_double( step );
         deload_double( joint_step );
         deload_double( speed );
@@ -104,6 +110,7 @@ int T4Para::loadConfig()
     }
 
     //! recover
+    mTickTmo = var.timeout;
     mStep = var.step;
     mJointStep = var.joint_step;
     mSpeed = var.speed;

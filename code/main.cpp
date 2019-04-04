@@ -8,9 +8,17 @@
 #include "mydebug.h"
 #include "./t4/mrx_t4server.h"
 
+#include "syspara.h"
+
+
+//! -logoutput
+//! -loginput
+//! -showin
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+    sysSetArg( argc, argv );
 
     qInfo( qApp->applicationVersion().toLatin1().data() );
 

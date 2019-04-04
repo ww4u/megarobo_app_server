@@ -44,6 +44,10 @@ public:
 public:
     virtual void attachServer( MAppServer *pServer );
 
+public:
+    void setTimeout( int tmo );
+    int timeout();
+
 protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
 
@@ -55,6 +59,8 @@ protected:
     void proc( QJsonDocument &jsonObj, quint64 &ts );
     void output( const QJsonDocument &obj );
 
+    void resetTimeout();
+
 protected:
     qintptr mPtr;
     QTcpSocket *m_pSocket;
@@ -63,13 +69,16 @@ protected:
     QByteArray mOutput;
 
 protected:
-//    QMap< QString, P_PROC > mProcMap;
     QMap< QString, ProxyApi * > mProcMap;
 
     MAppServer *m_pServer;
     MAppExec   *m_pExec;            //! executor service
 
     WorkingThread *m_pWorkingThread;
+
+    QTimer *m_pTimer;
+    bool mbTmo;
+    int mTimeout;
 signals:
 
 public slots:

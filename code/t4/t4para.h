@@ -42,6 +42,8 @@ public:
 
     QString mLinkStatus;
 
+    int mTickTmo;
+
     double mStep;
     double mJointStep;
     double mSpeed;      //! percent

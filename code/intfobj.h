@@ -12,4 +12,23 @@ public:
     QString command;
 };
 
+class IntfNotify : public IntfObj
+{
+public:
+    enum eNotifyCode
+    {
+        e_notify_unk,
+        e_notify_socket_idle_timeout,
+        e_notify_socket_idle_quit,
+    };
+
+public:
+    IntfNotify( const QString cmd="notify" ) : IntfObj( cmd )
+    {}
+
+public:
+    QString message;
+    int code;
+};
+
 #endif // INTFOBJ_H
