@@ -58,3 +58,5 @@ win32:LIBS += -lvisa32
 win32:LIBS += -L"../code/3rdlib"
 win32:LIBS += -llibws2_32 -llibiphlpapi
 
+DISTFILES += \
+    ../readme.md
