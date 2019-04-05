@@ -12,8 +12,12 @@ MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServ
         mPorts<<(portBase+i);
     }
 
-    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive
+#ifndef _RASPBERRY
+    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive    
 //    mAddr = "TCPIP0::169.254.142.71::inst0::INSTR";
+#else
+    mAddr = "TCPIP0::127.0.0.1::inst0::INSTR";
+#endif
 }
 
 int MRX_T4Server::start()

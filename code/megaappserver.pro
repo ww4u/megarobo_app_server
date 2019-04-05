@@ -46,8 +46,16 @@ HEADERS += \
     t4/mrx_t4server.h \
     syspara.h
 
+win32 {
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
 INCLUDEPATH += "G:/work/mct/source/device/libMegaGateway/src"
+}
+
+linux-arm*
+{
+INCLUDEPATH += "/home/w/work/mct-t4/source/device/libMegaGateway/src"
+DEFINES += _RASPBERRY
+}
 
 LIBS += -L"../code/lib"
 LIBS += -lmrx-device
