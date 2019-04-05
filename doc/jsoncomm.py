@@ -106,12 +106,14 @@ class RoboT4():
         return self.doRecv()
 
 if __name__=="__main__":
-    robo = RoboT4( )
+    # robo = RoboT4( )
+    robo = RoboT4( ip="169.254.1.2" )
 
-    robo.status()
+    # for i in range( 100000 ):
+    #     print( robo.status() )
 
-    print ( robo.doRecv() )
-    print ( robo.doRecv() )
+    # print ( robo.doRecv() )
+    # print ( robo.doRecv() )
 
     # time.sleep( 60 )
 
@@ -131,12 +133,12 @@ if __name__=="__main__":
     #         robo.step( 270, 0 )                        
     #     robo.waitIdle( )        
     
-    # for i in range( 100 ):
-    #     if i % 2 == 0:
-    #         robo.jStep( 3, 90 )
-    #     else:
-    #         robo.jStep( 3, 180 )                        
-    #     robo.waitIdle( )           
+    for i in range( 100 ):
+        if i % 2 == 0:
+            robo.jStep( 3, 90 )
+        else:
+            robo.jStep( 3, 180 )                        
+        robo.waitIdle( )           
 
 def testFlow():
     _mSocket = SOCKET.socket() 

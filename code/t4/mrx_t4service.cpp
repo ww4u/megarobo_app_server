@@ -44,7 +44,7 @@ if ( NULL == _pLocalServer )\
 #define wave_table          0
 
 #define post_call( api )    Q_ASSERT( NULL != m_pWorkingThread );\
-                            localRet = m_pWorkingThread->attachProc( this, (MAppService::P_PROC)post_##api, QString("post_"#api), QVariant(doc) );\
+                            localRet = m_pWorkingThread->attachProc( this, (MAppService::P_PROC)(&MRX_T4Service::post_##api), QString("post_"#api), QVariant(doc) );\
                             return localRet;
 
 MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
