@@ -8,6 +8,7 @@
 
 #include "intfseries.h"
 #include <math.h>
+#include <float.h>
 
 #define deg_to_rad( deg )   ( (deg)* M_PI /180)
 
@@ -184,29 +185,37 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
     deload_bool( continous );
     deload_int( joint );
 
+    int tmoms;
     if ( var.joint == 3 )
     {
-        //! abs value
-        //! \todo
-
         //! norminal angle
-        localRet = mrgMRQAdjust( local_vi(),
-                                 device_handle(),
+        if ( var.continous )
+        {
+            localRet = mrgRobotJointMoveOn( local_vi(),
+                                 robot_handle(),
                                  3,
-                                 wave_table,
-                                 var.value,
-                                 var.value / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed ,
-                                 120000 );
+                                 var.value*pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed );
+        }
+        else
+        {
+            tmoms = guessTmo( 3, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+            localRet = mrgSetRobotWristAngleZero( local_vi(),
+                                                  robot_handle(),
+                                                  var.value,
+                                                  var.value / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                                  tmoms );
+        }
     }
     else if ( var.joint == 4 )
     {
+        tmoms = guessTmo( 4, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
         localRet = mrgMRQAdjust( local_vi(),
                                  device_handle(),
                                  4,
                                  wave_table,
                                  var.value * pLocalServer->mJointStep,
                                  pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
-                                 120000 );
+                                 tmoms );
     }
     else
     { return -1; }
@@ -691,4 +700,16 @@ int MRX_T4Service::on_config_proc_q(  QJsonDocument &doc )
     doc.setObject( obj );
 
     return 0;
+}
+
+int MRX_T4Service::guessTmo( int joint, float dist, float speed )
+{
+    Q_ASSERT ( qAbs(speed) > FLT_EPSILON );
+
+    float t = qAbs(dist/speed);
+
+    if ( t < FLT_EPSILON )
+    { return 1000; }
+
+    return 60 * t *1000;
 }

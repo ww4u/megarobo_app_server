@@ -51,8 +51,7 @@ INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
 INCLUDEPATH += "G:/work/mct/source/device/libMegaGateway/src"
 }
 
-linux-arm*
-{
+linux-arm* {
 INCLUDEPATH += "/home/w/work/mct-t4/source/device/libMegaGateway/src"
 DEFINES += _RASPBERRY
 }

@@ -33,6 +33,7 @@ protected:
 
     int on_query_proc(  QJsonDocument &doc );
     int on_link_status_proc(  QJsonDocument &doc );
+    int on_link_status_proc_q(  QJsonDocument &doc );
 
     int on_device_status_proc(  QJsonDocument &doc );
     int on_exception_proc(  QJsonDocument &doc );
@@ -45,10 +46,9 @@ protected:
     int post_on_config_proc(  QJsonDocument &doc );
 
     int on_config_proc_q(  QJsonDocument &doc );
-    int on_link_status_proc_q(  QJsonDocument &doc );
 
 protected:
-
+    int guessTmo( int joint, float dist, float speed );
 };
 
 #endif // MRX_T4SERVICE_H

@@ -58,7 +58,7 @@ class RoboT4():
 
         self.doCmd( stepCmd )
 
-    def jStep( self, j, angle ):        
+    def jStep( self, j, angle, cont = False ):        
         """
         j: joint
         angle: angle or step
@@ -66,7 +66,7 @@ class RoboT4():
         joint_step = {
         "command":"joint_step",
         "value":1,
-        "continous":False,
+        "continous": cont,
         "joint": 3 
         }
 
@@ -96,18 +96,18 @@ class RoboT4():
         raise Exception("time out")            
         return False 
 
-    def linkStatus( self ):
-        query_link = {
-        "command":"query",
-        "item": "link_status"
-        }
-
-        self.doCmd( query_link )
+    def query( self, sth ):
+        query_arg = {
+        "command" : "query",
+        "item": sth
+        }   
+        self.doCmd( query_arg )
         return self.doRecv()
 
 if __name__=="__main__":
     # robo = RoboT4( )
-    robo = RoboT4( ip="169.254.1.2" )
+    # robo = RoboT4( ip="169.254.1.2" )
+    robo = RoboT4( ip="127.0.0.1", port=2345 )
 
     # for i in range( 100000 ):
     #     print( robo.status() )
@@ -117,7 +117,13 @@ if __name__=="__main__":
 
     # time.sleep( 60 )
 
+    var = robo.query( "exception" );print( var )
     
+    var = robo.query( "meta" );print( var )
+    var = robo.query( "pose" );print( var )
+    var = robo.query( "parameter" );print( var )
+    var = robo.query( "config" );print( var )
+    var = robo.query( "dataset" );print( var )
 
     # for i in range( 1000 ):
     #     if i % 2 == 0:
@@ -133,12 +139,13 @@ if __name__=="__main__":
     #         robo.step( 270, 0 )                        
     #     robo.waitIdle( )        
     
-    for i in range( 100 ):
-        if i % 2 == 0:
-            robo.jStep( 3, 90 )
-        else:
-            robo.jStep( 3, 180 )                        
-        robo.waitIdle( )           
+    # for i in range( 2 ):
+    #     if i % 2 == 0:
+    #         robo.jStep( 3, 180 )
+    #     else:
+    #         pass 
+    #         # robo.jStep( 3, 180 )                        
+    #     robo.waitIdle( )           
 
 def testFlow():
     _mSocket = SOCKET.socket() 

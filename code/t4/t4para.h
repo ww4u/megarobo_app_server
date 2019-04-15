@@ -46,7 +46,7 @@ public:
 
     double mStep;
     double mJointStep;
-    double mSpeed;      //! percent
+    double mSpeed;      //! 0.01~1
 
     double mMaxJointSpeed, mMaxBodySpeed;
 
