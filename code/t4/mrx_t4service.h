@@ -49,6 +49,8 @@ protected:
 
 protected:
     int guessTmo( int joint, float dist, float speed );
+    float alignP360( float p );
+    float alignN360( float p );
 };
 
 #endif // MRX_T4SERVICE_H

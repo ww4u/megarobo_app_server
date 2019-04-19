@@ -17,6 +17,7 @@ def doSomething( socket, dict ):
 
 class RoboT4():
     def __init__( self, ip="127.0.0.1", port=50000 ):
+
         self.mSocket1 = SOCKET.socket()
         self.mSocket2 = SOCKET.socket()
         self.mSocket3 = SOCKET.socket()
@@ -47,14 +48,12 @@ class RoboT4():
         return data.decode()                    
 
 
-    def step( self, angle, z = 0 ):
+    def step( self, angle, z = 0, cont = False ):
         stepCmd = { "command": "step",
-              "angle": 90,
-              "z": 0,
-              "continous": False
+              "angle": angle,
+              "z": z,
+              "continous": cont
             }
-        stepCmd["angle"] = angle 
-        stepCmd["z"] = z
 
         self.doCmd( stepCmd )
 
@@ -96,6 +95,13 @@ class RoboT4():
         raise Exception("time out")            
         return False 
 
+    def doAction( self, act ):
+        action = {
+                "command": "action",
+                "item": act 
+        }
+        self.doCmd( action )
+
     def query( self, sth ):
         query_arg = {
         "command" : "query",
@@ -105,9 +111,11 @@ class RoboT4():
         return self.doRecv()
 
 if __name__=="__main__":
+# def roboFlow():
     # robo = RoboT4( )
     # robo = RoboT4( ip="169.254.1.2" )
-    robo = RoboT4( ip="127.0.0.1", port=2345 )
+    # robo = RoboT4( ip="127.0.0.1", port=2345 )
+    robo = RoboT4( ip="127.0.0.1")
 
     # for i in range( 100000 ):
     #     print( robo.status() )
@@ -116,14 +124,28 @@ if __name__=="__main__":
     # print ( robo.doRecv() )
 
     # time.sleep( 60 )
+    # for i in range( 100000 ):
+    #     var = robo.query( "meta" );print( var )
+    #     time.sleep( 5 )
+    #     print( i )
+    # assert(False)        
 
-    var = robo.query( "exception" );print( var )
+    # var = robo.query( "exception" );print( var )
     
-    var = robo.query( "meta" );print( var )
-    var = robo.query( "pose" );print( var )
-    var = robo.query( "parameter" );print( var )
-    var = robo.query( "config" );print( var )
-    var = robo.query( "dataset" );print( var )
+    # var = robo.query( "pose" );print( var )
+    # var = robo.query( "parameter" );print( var )
+    # var = robo.query( "config" );print( var )
+    # var = robo.query( "dataset" );print( var )
+
+    # robo.doAction("home")
+    # robo.jStep( 3, 90 )
+    # robo.jStep( 3, -1, True )
+    # robo.waitIdle( )  
+
+    robo.step( 270, 0, True )
+
+    time.sleep( 2 )
+    robo.doAction( "stop" )
 
     # for i in range( 1000 ):
     #     if i % 2 == 0:
@@ -146,7 +168,7 @@ if __name__=="__main__":
     #         pass 
     #         # robo.jStep( 3, 180 )                        
     #     robo.waitIdle( )           
-
+# if __name__=="__main__":
 def testFlow():
     _mSocket = SOCKET.socket() 
 
@@ -226,14 +248,16 @@ def testFlow():
             "h": 5
         }
     }
-    # doSomething( _mSocket, add_pose )  
+    doSomething( _mSocket, add_pose )  
+
+    time.sleep( 1 )
 
     # querys
     query_device_status = {
         "command":"query",
         "item": "device_status"
     }
-    doSomething( _mSocket, query_device_status ) 
+    # doSomething( _mSocket, query_device_status ) 
 
     # time.sleep( 10 )
     # doSomething( _mSocket, query ) 

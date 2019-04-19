@@ -153,15 +153,28 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     double dist = distance( lx, ly, lz, 0,0,0 );
     double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->mSpeed;
 
-    localRet = mrgRobotRelMove( local_vi(),
-                                robot_handle(),
-                                wave_table,
-                                lx,
-                                ly,
-                                lz,
-                                t,
-                                120000
-                               );
+    if ( var.continous )
+    {
+        localRet = mrgRobotMoveOn( local_vi(),
+                                   robot_handle(),
+                                   wave_table,
+                                   lx,
+                                   ly,
+                                   lz,
+                                   pLocalServer->mMaxBodySpeed * pLocalServer->mSpeed );
+    }
+    else
+    {
+        localRet = mrgRobotRelMove( local_vi(),
+                                    robot_handle(),
+                                    wave_table,
+                                    lx,
+                                    ly,
+                                    lz,
+                                    t,
+                                    60 * t
+                                   );
+    }
 
     return localRet;
 }
@@ -191,31 +204,64 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
         //! norminal angle
         if ( var.continous )
         {
+            //! \note var.value = dir
             localRet = mrgRobotJointMoveOn( local_vi(),
                                  robot_handle(),
                                  3,
-                                 var.value*pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed );
+                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+            logDbg()<<pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed;
         }
         else
         {
-            tmoms = guessTmo( 3, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
-            localRet = mrgSetRobotWristAngleZero( local_vi(),
-                                                  robot_handle(),
-                                                  var.value,
-                                                  var.value / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
-                                                  tmoms );
+            //! step proc
+            if ( qAbs(var.value) == 1 )
+            {
+                tmoms = guessTmo( 3, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+                localRet = mrgMRQAdjust( local_vi(),
+                                         device_handle(),
+                                         3,
+                                         wave_table,
+                                         var.value * pLocalServer->mJointStep,
+                                         pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                         tmoms );
+            }
+            else
+            {
+                //! \note align the dst angle
+                float normAngle = 270 - var.value;
+                normAngle = alignP360( normAngle );
+
+                tmoms = guessTmo( 3, 360, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+                localRet = mrgSetRobotWristPose( local_vi(),
+                                                      robot_handle(),
+                                                      normAngle,
+                                                      pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed,
+                                                      tmoms );
+            }
         }
     }
     else if ( var.joint == 4 )
     {
-        tmoms = guessTmo( 4, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
-        localRet = mrgMRQAdjust( local_vi(),
-                                 device_handle(),
+        //! continous
+        if ( var.continous )
+        {
+            //! \note var.value = dir
+            localRet = mrgRobotJointMoveOn( local_vi(),
+                                 robot_handle(),
                                  4,
-                                 wave_table,
-                                 var.value * pLocalServer->mJointStep,
-                                 pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
-                                 tmoms );
+                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+        }
+        else
+        {
+            tmoms = guessTmo( 4, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+            localRet = mrgMRQAdjust( local_vi(),
+                                     device_handle(),
+                                     4,
+                                     wave_table,
+                                     var.value * pLocalServer->mJointStep,
+                                     pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                     tmoms );
+        }
     }
     else
     { return -1; }
@@ -322,9 +368,11 @@ int MRX_T4Service::on_add_proc(  QJsonDocument &doc )
 
     deload_string( name );
 
-    //! object
+//    //! object
     QJsonObject poseObj;
+    logDbg();
     _deload_json_obj( poseObj, obj, pose );
+    logDbg();
 
     __deload_double( poseObj, var.pose, x );
     __deload_double( poseObj, var.pose, y );
@@ -427,7 +475,22 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; }
     else
-    { var.status = "stoped"; }
+    {
+        var.status = "stoped";
+
+        char states[128];
+        localRet = mrgRobotGetState( local_vi(),
+                          robot_handle(),
+                          wave_table,
+                          states );
+        if ( localRet != 0 )
+        {}
+        else
+        {
+            var.status = QString( states ).toLower();
+        }
+
+    }
 
     json_obj( command );
     json_obj( status );
@@ -474,14 +537,17 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
         fz = 0;
     }
 
-    float fHAngle;
+    float fHAngle, fw;
     localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
                                         &fHAngle );
+
+    localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
+                          &fw );
 
     var.pose.x = fx;
     var.pose.y = fy;
     var.pose.z = fz;
-    var.pose.w = 0;             //! \todo
+    var.pose.w = fw;
     var.pose.h = fHAngle;
 
     pose.insert( "x", var.pose.x );
@@ -564,6 +630,8 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
     var.hand_io[0] = get_bit( ioState, 3 );
     var.hand_io[1] = get_bit( ioState, 2 );
 
+    var.mechanical_io = false;
+
 //    //! \todo
 //    var.currents[0] = 0;
 //    var.currents[1] = 1;
@@ -599,11 +667,46 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 
     var.collide = true;
 
+    var.max_joint_speed = _pLocalServer->mMaxJointSpeed;
+    var.max_tcp_speed = _pLocalServer->mMaxBodySpeed;
+
 //    var.tunning[0] = true;
 //    var.tunning[1] = true;
 //    var.tunning[2] = true;
 //    var.tunning[3] = true;
 //    var.tunning[4] = true;
+
+    //! x,y,z,w,h
+    {
+        //! x,y,z now
+        float fx, fy, fz;
+        localRet = mrgGetRobotCurrentPosition( local_vi(),
+                                          robot_handle(),
+
+                                          &fx, &fy, &fz );
+        if ( localRet != 0 )
+        {
+            fx = 0;
+            fy = 0;
+            fz = 0;
+        }
+
+        float fHAngle;
+        localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
+                                            &fHAngle );
+
+
+        float fw;
+        localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
+                                         &fw );
+
+        var.x = fx;
+        var.y = fy;
+        var.z = fz;
+
+        var.w = 0;
+        var.h = fHAngle;
+    }
 
     //! output the json
     json_obj( command );
@@ -613,11 +716,23 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
     export_array( slow_ratio );
     export_array( micro_steps );
 
+    //! \todo by the hand type
     export_array( hand_io );
+    json_obj( mechanical_io );
+
     export_array( distance_sensors );
     export_array( tunning );
 
     json_obj( collide );
+
+    json_obj( max_joint_speed );
+    json_obj( max_tcp_speed );
+
+    json_obj( x );
+    json_obj( y );
+    json_obj( z );
+    json_obj( w );
+    json_obj( h );
 
     doc.setObject( obj );
 
@@ -712,4 +827,23 @@ int MRX_T4Service::guessTmo( int joint, float dist, float speed )
     { return 1000; }
 
     return 60 * t *1000;
+}
+
+float MRX_T4Service::alignP360( float degree )
+{
+    while( degree > 360 )
+    { degree -= 360; }
+    while( degree < 0 )
+    { degree += 360; }
+
+    return degree;
+}
+float MRX_T4Service::alignN360( float degree )
+{
+    while( degree > 0 )
+    { degree -= 360; }
+    while( degree < -360 )
+    { degree += 360; }
+
+    return degree;
 }

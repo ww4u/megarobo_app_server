@@ -138,9 +138,15 @@ public:
     int micro_steps[5];
 
     bool hand_io[2];
+    bool mechanical_io;
     bool distance_sensors[4];
     bool collide;
     bool tunning[5];
+
+    float max_tcp_speed, max_joint_speed;
+
+    //! obj pos
+    float x,y,z,w,h;
 };
 
 class IntfdataSet : public IntfObj
