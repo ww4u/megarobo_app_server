@@ -124,11 +124,11 @@ if __name__=="__main__":
     # print ( robo.doRecv() )
 
     # time.sleep( 60 )
-    # for i in range( 100000 ):
-    #     var = robo.query( "meta" );print( var )
-    #     time.sleep( 5 )
-    #     print( i )
-    # assert(False)        
+    for i in range( 100000 ):
+        var = robo.query( "meta" );print( var )
+        time.sleep( 5 )
+        print( i )
+    assert(False)        
 
     # var = robo.query( "exception" );print( var )
     

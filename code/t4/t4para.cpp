@@ -24,7 +24,8 @@ void T4Para::reset()
     mAlias = "myROBOT";
     mbHasHand = true;
 
-    mTickTmo = 0;
+    //! tick timeout
+    mTickTmo = 15 * 60 * 1000;
 
     mStep = 10;
     mJointStep = 5;

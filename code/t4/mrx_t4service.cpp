@@ -48,6 +48,13 @@ if ( NULL == _pLocalServer )\
                             localRet = m_pWorkingThread->attachProc( this, (MAppService::P_PROC)(&MRX_T4Service::post_##api), QString("post_"#api), QVariant(doc) );\
                             return localRet;
 
+#define query_( proc )  { QJsonDocument localDoc;\
+                        localRet = proc( localDoc );\
+                        if ( localRet != 0 )\
+                        { return localRet; }\
+                        \
+                        output( localDoc ); }
+
 MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
 {
     //! fill map
@@ -136,17 +143,36 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
 
     //! deparse the x/y/z
     double lx, ly, lz;
-    if ( var.z == 0 )
+    if ( var.continous )
     {
-        lx = pLocalServer->mStep * sin( deg_to_rad(var.angle) );
-        ly = - pLocalServer->mStep * cos( deg_to_rad(var.angle) );
-        lz = pLocalServer->mStep * var.z;
+        if ( var.z == 0 )
+        {
+            lx = 1 * sin( deg_to_rad(var.angle) );
+            ly = - 1 * cos( deg_to_rad(var.angle) );
+            lz = 1 * var.z;
+        }
+        else
+        {
+            lx = 0;
+            ly = 0;
+            lz = 1 * var.z;
+        }
     }
+    //! step
     else
     {
-        lx = 0;
-        ly = 0;
-        lz = pLocalServer->mStep * var.z;logDbg()<<lz<<pLocalServer->mStep;
+        if ( var.z == 0 )
+        {
+            lx = pLocalServer->mStep * sin( deg_to_rad(var.angle) );
+            ly = - pLocalServer->mStep * cos( deg_to_rad(var.angle) );
+            lz = pLocalServer->mStep * var.z;
+        }
+        else
+        {
+            lx = 0;
+            ly = 0;
+            lz = pLocalServer->mStep * var.z;logDbg()<<lz<<pLocalServer->mStep;
+        }
     }
 
     //! guess t
@@ -172,9 +198,10 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
                                     ly,
                                     lz,
                                     t,
-                                    60 * t
+                                    (1000 * t + 2000)
                                    );
     }
+
 
     return localRet;
 }
@@ -285,7 +312,7 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         //! \note force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
 
-        post_call( on_action_proc );
+        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
     }
     else if ( var.item == "emergency_stop" )
     {
@@ -297,7 +324,7 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         //! \note force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
     }
-    else
+//    else
     {
         post_call( on_action_proc );
     }
@@ -316,19 +343,25 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
         //! \todo stop and home
         localRet = mrgRobotGoHome( local_vi(),
                                    robot_handle(), 120000 );
+
     }
     else if ( var.item == "emergency_stop" )
     {
         //! \todo force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+
+        //! \note disable emerge stop
+        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
     }
     else if ( var.item == "stop" )
     {
         //! \todo normal stop
-        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+//        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
 //        ret = mrgRobotToolStop( local_vi(),
 //                                robot_handle() );
 //        ret = mrgRobotGoHomeStop( )
+
     }
     else if ( var.item == "package" )
     {
@@ -387,18 +420,13 @@ int MRX_T4Service::on_add_proc(  QJsonDocument &doc )
     return 0;
 }
 
-#define query_( proc )  localRet = proc( localDoc );\
-                        if ( localRet != 0 )\
-                        { return localRet; }\
-                        \
-                        output( localDoc );
 int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
 {
     pre_def( Intfquery );
 
     deload_string( item );
 
-    QJsonDocument localDoc;
+
     if ( var.item == "link_status" )
     {
         query_( on_link_status_proc_q );
@@ -541,8 +569,12 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
     localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
                                         &fHAngle );
 
+
     localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
                           &fw );
+    //! align fw
+    fw = 270 - fw;
+    fw = alignP360( fw );
 
     var.pose.x = fx;
     var.pose.y = fy;
@@ -699,12 +731,15 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
         float fw;
         localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
                                          &fw );
+        //! align fw
+        fw = 270 - fw;
+        fw = alignP360( fw );
 
         var.x = fx;
         var.y = fy;
         var.z = fz;
 
-        var.w = 0;
+        var.w = fw;
         var.h = fHAngle;
     }
 
