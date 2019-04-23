@@ -6,7 +6,7 @@
 //! config file
 #define config_dir        qApp->applicationDirPath() + "/data"
 #define data_dir        config_dir
-#define config_file     data_dir + "/config.json"
+#define config_file     config_dir + "/config.json"
 #define data_file       data_dir + "/data.json"
 
 T4Para::T4Para()
@@ -64,7 +64,7 @@ int T4Para::saveConfig()
     //! save
     QJsonDocument doc( obj );
 
-    if ( assurePath(config_dir) )
+    if ( 0 == assurePath(config_dir) )
     {}
     else
     { return -1; }
@@ -141,7 +141,7 @@ int T4Para::saveDataSet()
     QByteArray dataAry = doc.toJson();
 
     //! assure path
-    if ( assurePath(data_dir) )
+    if ( 0 == assurePath(data_dir) )
     {}
     else
     { return -1; }

@@ -22,6 +22,8 @@ int main(int argc, char *argv[])
 
     qInfo( qApp->applicationVersion().toLatin1().data() );
 
+    logDbg()<<QDir::homePath();
+
     int ret;
 
     //! servers
