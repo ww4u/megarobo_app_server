@@ -29,6 +29,9 @@ public:
 protected:
     int _loadDataSet( QJsonDocument &doc,
                       QList< ObjPoint * > &localPoints);
+
+    int assurePath( const QString &path );
+
 public:
     int _dataDataToArray( QJsonArray &obj );
 

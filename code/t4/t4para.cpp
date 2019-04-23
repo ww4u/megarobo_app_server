@@ -4,8 +4,10 @@
 #include "../mydebug.h"
 
 //! config file
-#define config_file     qApp->applicationDirPath() + "/data/config.json"
-#define data_file       qApp->applicationDirPath() + "/data/data.json"
+#define config_dir        qApp->applicationDirPath() + "/data"
+#define data_dir        config_dir
+#define config_file     data_dir + "/config.json"
+#define data_file       data_dir + "/data.json"
 
 T4Para::T4Para()
 {
@@ -61,6 +63,11 @@ int T4Para::saveConfig()
 
     //! save
     QJsonDocument doc( obj );
+
+    if ( assurePath(config_dir) )
+    {}
+    else
+    { return -1; }
 
     QFile fileOut( config_file );
     if ( fileOut.open( QIODevice::WriteOnly) )
@@ -132,6 +139,12 @@ int T4Para::saveDataSet()
 
     QJsonDocument doc( jArray );
     QByteArray dataAry = doc.toJson();
+
+    //! assure path
+    if ( assurePath(data_dir) )
+    {}
+    else
+    { return -1; }
 
     //! export
     QFile file( data_file );
@@ -233,6 +246,25 @@ int T4Para::_loadDataSet( QJsonDocument &doc,
         pPoint->pose.h = pointObj.value( "h" ).toDouble();
 
         localPoints.append( pPoint );
+    }
+
+    return 0;
+}
+
+int T4Para::assurePath( const QString &path )
+{
+    //! create path
+    QDir dir( path );
+    if ( dir.exists() )
+    {}
+    else
+    {
+        if ( dir.mkpath( path) )
+        {}
+        else
+        {
+            return -1;
+        }
     }
 
     return 0;
