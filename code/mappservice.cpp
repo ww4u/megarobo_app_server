@@ -256,11 +256,16 @@ void MAppService::proc( QJsonDocument &doc, quint64 &ts )
 
 void MAppService::output( const QJsonDocument &doc )
 {
-    mOutput = doc.toJson();
+//    mOutput = doc.toJson();
     //! \note append the terminator
 //    mOutput.append( '#' );
 
-    sysLogOut( mOutput );
+    QByteArray outAry = doc.toJson();
+    m_pExec->signal_output( outAry );
+
+    sysLogOut( outAry );
+
+//    sysLogOut( mOutput );
 }
 
 void MAppService::resetTimeout()
@@ -353,10 +358,9 @@ void MAppService::slot_event_enter()
 }
 void MAppService::slot_event_exit( QByteArray ary )
 {
-    logDbg_Thread();
 
     if ( ary.size() > 0 )
-    {
+    {//logDbg_Thread()<<ary;
         m_pSocket->write( ary );
         m_pSocket->flush();
         ary.clear();

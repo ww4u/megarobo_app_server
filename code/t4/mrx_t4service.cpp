@@ -202,6 +202,7 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
                                    );
     }
 
+    query_( on_pose_proc );
 
     return localRet;
 }
@@ -293,6 +294,9 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
     else
     { return -1; }
 
+    //! \note return the pose
+    query_( on_pose_proc );
+
     return localRet;
 }
 
@@ -307,12 +311,17 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         //! \todo
         //! stop the mission thread
         Q_ASSERT( NULL != m_pWorkingThread );
-        m_pWorkingThread->requestInterruption();
+        if ( m_pWorkingThread->isRunning() )
+        {
+            m_pWorkingThread->requestInterruption();
 
-        //! \note force stop
-        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+            //! \note force stop
+            localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
 
-        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+            localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+        }
+        else
+        {}
     }
     else if ( var.item == "emergency_stop" )
     {
@@ -323,8 +332,12 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
 
         //! \note force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+
+        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
     }
-//    else
+    else
+    {}
+
     {
         post_call( on_action_proc );
     }
@@ -347,11 +360,7 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     }
     else if ( var.item == "emergency_stop" )
     {
-        //! \todo force stop
-        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
-
-        //! \note disable emerge stop
-        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+        //! \note has stoped
     }
     else if ( var.item == "stop" )
     {
@@ -380,6 +389,8 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     }
     else
     {}
+
+    query_( on_pose_proc );
 
     return localRet;
 }
