@@ -22,6 +22,8 @@ protected:
 public:
     void postEvent( QEvent *pEvent );
 
+    void signal_output( QByteArray ary );
+
 protected:
     virtual bool onUserEvent( QEvent *pEvent );
 

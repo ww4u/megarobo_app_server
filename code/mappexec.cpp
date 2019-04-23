@@ -39,12 +39,12 @@ void MAppExec::run()
 
         //! enter
         emit signal_event_enter();
-        m_pService->mOutput.clear();
+//        m_pService->mOutput.clear();
 
         onUserEvent( pEvent );
 
         //! exit
-        emit signal_event_exit( m_pService->mOutput );
+//        emit signal_event_exit( m_pService->mOutput );
 
         delete pEvent;
     }
@@ -61,6 +61,11 @@ void MAppExec::postEvent( QEvent *pEvent )
     {}
     else
     { start(); }
+}
+
+void MAppExec::signal_output( QByteArray ary )
+{
+    emit signal_event_exit( ary );
 }
 
 bool MAppExec::onUserEvent( QEvent *pEvent )
