@@ -37,7 +37,7 @@ start_program()
 	rm -rf ./MRH-T/update.src/$filename &&
 	sync &&
 	sync &&
-	sync
+	syncd
 	else
 	echo "$filename is not found." > /dev/ttyAMA0
 	fi	
