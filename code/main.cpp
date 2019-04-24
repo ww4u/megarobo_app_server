@@ -30,8 +30,11 @@ int main(int argc, char *argv[])
     ret = server.start();
     logDbg()<<ret;
 
-    ret = server.open();
-    logDbg()<<ret;
+    do
+    {
+        ret = server.open();
+        QThread::msleep( 100 );
+    }while( ret != 0 );
 
     ret = a.exec();
     logDbg()<<ret;

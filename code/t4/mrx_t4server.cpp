@@ -68,39 +68,55 @@ int MRX_T4Server::open()
     else
     { return -1; }
 
-    int names[16];
-
-    //! \todo names overflow
-    ret = mrgGetRobotName( mVi, names );
-    if ( ret > 16 || ret < 1 )
-    { return -1; }
-
-    mRobotHandle = names[0];
-
-    //! device handle
-    int deviceHandles[16];
-    ret = mrgGetRobotDevice( self_robot_var(), deviceHandles );
-    if ( ret > 16 || ret < 1 )
-    { return -1; }
-    mDeviceHandle = deviceHandles[0];
-
-    //! \todo update para
-    char idns[128];
-    ret = mrgGateWayIDNQuery( mVi, idns );
-    if ( ret == 0 )
+    do
     {
-        QString strIdns = idns;
+        int names[16];
 
-        QStringList idnList = strIdns.split(',');
-        if ( idnList.size() < 4 )
-        { return -1; }
+        //! \todo names overflow
+        ret = mrgGetRobotName( mVi, names );
+        if ( ret > 16 || ret < 1 )
+        {
+            ret = -2;
+            break;
+        }
 
-        mSn = idnList.at( 2 );
-        logDbg()<<mSn;
+        mRobotHandle = names[0];
+
+        //! device handle
+        int deviceHandles[16];
+        ret = mrgGetRobotDevice( self_robot_var(), deviceHandles );
+        if ( ret > 16 || ret < 1 )
+        {
+            ret = -3;
+            break;
+        }
+        mDeviceHandle = deviceHandles[0];
+
+        //! \todo update para
+        char idns[128];
+        ret = mrgGateWayIDNQuery( mVi, idns );
+        if ( ret == 0 )
+        {
+            QString strIdns = idns;
+
+            QStringList idnList = strIdns.split(',');
+            if ( idnList.size() < 4 )
+            { return -1; }
+
+            mSn = idnList.at( 2 );
+            logDbg()<<mSn;
+        }
+
+    }while( 0 );
+
+    //! get fail
+    if ( ret != 0 )
+    {
+        mrgCloseGateWay( mVi );
+        mVi = 0;
     }
 
-
-    return 0;
+    return ret;
 }
 
 void MRX_T4Server::close()

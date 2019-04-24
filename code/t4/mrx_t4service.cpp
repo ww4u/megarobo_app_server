@@ -377,7 +377,7 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
         localRet = mrgGetRobotFold( local_vi(),robot_handle(),
                                wave_table,
                                0,
-                               -18.8,
+                               18.8,
                                -57.4,
                                -103
                                );
