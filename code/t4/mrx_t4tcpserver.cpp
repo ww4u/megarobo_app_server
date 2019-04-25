@@ -15,6 +15,8 @@ void MRX_T4TcpServer::incomingConnection(qintptr socketDescriptor)
     thread->moveToThread( thread );
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
+    thread->moveToThread( thread );
+
     Q_ASSERT( NULL != m_pServer );
     thread->attachServer( m_pServer );
 

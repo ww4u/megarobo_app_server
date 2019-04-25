@@ -77,6 +77,7 @@ protected:
 
     MAppServer *m_pServer;
     MAppExec   *m_pExec;            //! executor service
+    QMutex mExecMutex;
 
     WorkingThread *m_pWorkingThread;
 
