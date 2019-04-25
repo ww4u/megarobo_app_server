@@ -61,6 +61,8 @@ protected:
 
     void resetTimeout();
 
+    virtual void pre_quit();
+
 protected:
     qintptr mPtr;
 
@@ -91,6 +93,11 @@ public slots:
 
     void slot_event_enter();
     void slot_event_exit( QByteArray ary );
+
+    void slot_on_socket_error( QAbstractSocket::SocketError err );
+    void slot_on_socket_disconnect();
+
+
 };
 
 class WorkingThread : public QThread

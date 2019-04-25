@@ -93,14 +93,7 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
 
 MRX_T4Service::~MRX_T4Service()
 {
-    if ( NULL != m_pWorkingThread )
-    {
-        m_pServer->disconnectWorking( m_pWorkingThread );
-
-        m_pWorkingThread->requestInterruption();
-        m_pWorkingThread->wait();
-        delete m_pWorkingThread;
-    }
+    pre_quit();
 }
 
 bool MRX_T4Service::onUserEvent(QEvent *pEvent)

@@ -24,8 +24,8 @@ class RoboT4():
 
         ipPort=( ip, port )
         self.mSocket1.connect( (ip,port) )
-        self.mSocket2.connect( (ip,port+1) )
-        self.mSocket3.connect( (ip,port+2) )
+        # self.mSocket2.connect( (ip,port+1) )
+        # self.mSocket3.connect( (ip,port+2) )
 
     # do the command
     def doCmd( self, dict, socket = None ):
@@ -125,26 +125,27 @@ if __name__=="__main__":
 
     # time.sleep( 60 )
 
-    tSlp = 0.1
-    for i in range( 1000 ):
-        robo.step( 0 )
-        # time.sleep( tSlp )
-        robo.step( 90 )
-        # time.sleep( tSlp )
-        robo.step( 180 )
-        # time.sleep( tSlp )
-        robo.step( 270 )
-        # time.sleep( tSlp )
+    # tSlp = 0.1
+    # for i in range( 1000 ):
+    #     robo.step( 0 )
+    #     # time.sleep( tSlp )
+    #     robo.step( 90 )
+    #     # time.sleep( tSlp )
+    #     robo.step( 180 )
+    #     # time.sleep( tSlp )
+    #     robo.step( 270 )
+    #     # time.sleep( tSlp )
 
     # time.sleep( 10 )
 
+    robo.step( 0 )
     assert(False) 
 
-    for i in range( 100000 ):
-        var = robo.query( "meta" );print( var )
-        time.sleep( 5 )
-        print( i )
-    assert(False)        
+    # for i in range( 100000 ):
+    #     var = robo.query( "meta" );print( var )
+    #     time.sleep( 5 )
+    #     print( i )
+    # assert(False)        
 
     # var = robo.query( "exception" );print( var )
     

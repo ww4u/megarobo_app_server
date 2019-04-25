@@ -13,6 +13,8 @@
 #include "intfobj.h"
 #include "myjson.h"
 
+#include "mappserver.h"
+
 //! create the type
 MServiceEvent::MServiceEvent( int tpe ) : QEvent( QEvent::Type(tpe) )
 {
@@ -67,10 +69,11 @@ void MAppService::run()
              this, SLOT(slot_dataIn()) );
     m_pSocket = &tSocket;    
 
+    //! quit the service
     connect( &tSocket, SIGNAL(disconnected()),
-             this, SLOT( quit() ) );
+             this, SLOT( slot_on_socket_disconnect() ) );
     connect( &tSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-             this, SLOT( quit() ) );
+             this, SLOT( slot_on_socket_error(QAbstractSocket::SocketError ) ) );
 
     //! create the exec thread
     m_pExec = new MAppExec();
@@ -305,6 +308,19 @@ void MAppService::resetTimeout()
     logDbg_Thread();
 }
 
+void MAppService::pre_quit()
+{
+    if ( NULL != m_pWorkingThread )
+    {
+        m_pServer->disconnectWorking( m_pWorkingThread );
+
+        m_pWorkingThread->requestInterruption();
+        m_pWorkingThread->wait();
+        delete m_pWorkingThread;
+        m_pWorkingThread = NULL;
+    }
+}
+
 void MAppService::slot_dataIn( )
 {
     QByteArray ary = m_pSocket->readAll();
@@ -381,6 +397,24 @@ void MAppService::slot_event_exit( QByteArray ary )
         mSendMutex.unlock();
 //        ary.clear();
     }
+}
+
+void MAppService::slot_on_socket_error( QAbstractSocket::SocketError err )
+{
+    logDbg()<<err;
+
+    pre_quit();
+
+    quit();
+}
+
+void MAppService::slot_on_socket_disconnect()
+{
+    logDbg();
+
+    pre_quit();
+
+    quit();
 }
 
 //! thread
