@@ -61,7 +61,7 @@ void MAppService::run()
     QTcpSocket tSocket;
 
     bool b = tSocket.setSocketDescriptor( mPtr );
-    logDbg_Thread()<<b<<tSocket.thread();
+//    logDbg_Thread()<<b<<tSocket.thread();
 
     connect( &tSocket, SIGNAL(readyRead()),
              this, SLOT(slot_dataIn()) );
@@ -243,9 +243,21 @@ void MAppService::proc( QJsonDocument &doc, quint64 &ts )
             //! save the last ts
             pApi->mLastTs = ts;
 
-            ret = (this->*(pApi->m_pProc))( doc );
-            if ( ret != 0 )
-            { logDbg()<<ret; }
+
+            //! pre
+            if ( pApi->m_pPreProc!= NULL )
+            { ret = (this->*(pApi->m_pPreProc))( doc ); }
+
+            if ( pApi->m_pProc != NULL )
+            {
+                ret = (this->*(pApi->m_pProc))( doc );
+                if ( ret != 0 )
+                { logDbg()<<ret; }
+            }
+
+            //! post
+            if ( pApi->m_pPostProc!= NULL )
+            { ret = (this->*(pApi->m_pPostProc))( doc ); }
 
             return;
         }
@@ -354,7 +366,7 @@ void MAppService::slot_timeout()
 
 void MAppService::slot_event_enter()
 {
-    logDbg_Thread();
+//    logDbg_Thread();
 }
 void MAppService::slot_event_exit( QByteArray ary )
 {
@@ -392,17 +404,25 @@ void WorkingThread::run()
 
         try
         {
-            logDbg()<<pApi->mApiName<<"enter";
-
-            //! failed
+//            logDbg()<<pApi->mApiName<<"enter";
             QJsonDocument doc = pApi->mVar.toJsonDocument();
+
+            //! pre
+            if ( pApi->m_pPreProc!= NULL )
+            { ret = (((pApi->m_pObj)->*(pApi->m_pPreProc)))( doc ); }
+
+            //! post do
             ret = (((pApi->m_pObj)->*(pApi->m_pProc)))( doc );
             if ( ret != 0 )
             {
                 //! post the event
             }
 
-            logDbg()<<pApi->mApiName<<"exit";
+            //! post
+            if ( pApi->m_pPostProc!= NULL )
+            { ret = (((pApi->m_pObj)->*(pApi->m_pPostProc)))( doc ); }
+
+//            logDbg()<<pApi->mApiName<<"exit";
         }
         catch( QException &e )
         {   
@@ -420,6 +440,8 @@ void WorkingThread::run()
 
 int WorkingThread::attachProc( MAppService *pObj,
                                 MAppService::P_PROC proc,
+                                MAppService::P_PROC preProc,
+                                MAppService::P_PROC postProc,
                                 const QString &name,
                                 QVariant var )
 {
@@ -431,6 +453,10 @@ int WorkingThread::attachProc( MAppService *pObj,
 
     pApi->m_pObj = pObj;
     pApi->m_pProc = proc;
+
+    pApi->m_pPreProc = preProc;
+    pApi->m_pPostProc = postProc;
+
     pApi->mVar = var;
     pApi->mApiName = name;
 

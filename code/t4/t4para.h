@@ -17,6 +17,10 @@ public:
 public:
     void reset();
 
+    void setStep( double step );
+    void setJStep( double step );
+    void setSpeed( double spd );
+
     int saveConfig();
     int loadConfig();
 
@@ -47,8 +51,8 @@ public:
 
     int mTickTmo;
 
-    double mStep;
-    double mJointStep;
+    double mStep;       //! 1~100
+    double mJointStep;  //! 1~100
     double mSpeed;      //! 0.01~1
 
     double mMaxJointSpeed, mMaxBodySpeed;

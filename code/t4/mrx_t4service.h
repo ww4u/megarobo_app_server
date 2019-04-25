@@ -14,6 +14,9 @@ public:
     virtual void attachServer( MAppServer *pServer );
 
 protected:
+    int _on_preProc( QJsonDocument &doc );
+    int _on_postProc( QJsonDocument &doc );
+
     int on_ack_proc( QJsonDocument &doc );
 
     int on_step_proc(  QJsonDocument &doc );
@@ -36,6 +39,7 @@ protected:
     int on_link_status_proc_q(  QJsonDocument &doc );
 
     int on_device_status_proc(  QJsonDocument &doc );
+    int on_device_status_raw_proc( QJsonDocument &doc );
     int on_exception_proc(  QJsonDocument &doc );
     int on_pose_proc(  QJsonDocument &doc );
     int on_parameter_proc(  QJsonDocument &doc );
