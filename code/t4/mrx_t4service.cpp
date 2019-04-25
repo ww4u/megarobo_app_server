@@ -45,7 +45,11 @@ if ( NULL == _pLocalServer )\
 #define wave_table          0
 
 #define post_call( api )    Q_ASSERT( NULL != m_pWorkingThread );\
-                            localRet = m_pWorkingThread->attachProc( this, (MAppService::P_PROC)(&MRX_T4Service::post_##api), QString("post_"#api), QVariant(doc) );\
+                            localRet = m_pWorkingThread->attachProc( this, \
+                                                                     (MAppService::P_PROC)(&MRX_T4Service::post_##api), \
+                                                                     (MAppService::P_PROC)(&MRX_T4Service::_on_preProc), \
+                                                                     (MAppService::P_PROC)(&MRX_T4Service::_on_postProc), \
+                                                                     QString("post_"#api), QVariant(doc) );\
                             return localRet;
 
 #define query_( proc )  { QJsonDocument localDoc;\
@@ -55,15 +59,19 @@ if ( NULL == _pLocalServer )\
                         \
                         output( localDoc ); }
 
+#define ack_status( )   query_( on_pose_proc );query_( on_device_status_proc );
+
+#define ack_raw_status()    query_( on_pose_proc );query_( on_device_status_raw_proc );
+
 MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
 {
     //! fill map
 //    mProcMap.insert( QString("step"), (MAppService::P_PROC)&MRX_T4Service::on_step_proc);
 
-    attachProc( QString("ack"), (api_type)&api_class::on_ack_proc);
-    attachProc( QString("step"), (api_type)&api_class::on_step_proc, 1000 );
-    attachProc( QString("joint_step"), (api_type)&api_class::on_joint_step_proc, 1000 );
-    attachProc( QString("action"), (api_type)&api_class::on_action_proc);
+    attachProc( QString("ack"), (api_type)&api_class::on_ack_proc );
+    attachProc( QString("step"), (api_type)&api_class::on_step_proc, 500 );
+    attachProc( QString("joint_step"), (api_type)&api_class::on_joint_step_proc, 500 );
+    attachProc( QString("action"), (api_type)&api_class::on_action_proc );
 
     attachProc( QString("indicator"), (api_type)&api_class::on_indicator_proc);
     attachProc( QString("add"), (api_type)&api_class::on_add_proc);
@@ -97,7 +105,7 @@ MRX_T4Service::~MRX_T4Service()
 
 bool MRX_T4Service::onUserEvent(QEvent *pEvent)
 {
-    logDbg_Thread();
+//    logDbg_Thread();
 
     MServiceEvent *pLocalEvent = (MServiceEvent*)pEvent;
     QJsonDocument localDoc = pLocalEvent->mVar1.toJsonDocument();
@@ -115,6 +123,23 @@ void MRX_T4Service::attachServer( MAppServer *pServer )
 
     //! link the working
     pServer->connectWorking( m_pWorkingThread );
+}
+
+int MRX_T4Service::_on_preProc( QJsonDocument &doc )
+{
+    int localRet;
+
+    query_(on_device_status_proc );
+
+    return localRet;
+}
+int MRX_T4Service::_on_postProc( QJsonDocument &doc )
+{
+    int localRet;
+
+    ack_raw_status();
+
+    return localRet;
 }
 
 int MRX_T4Service::on_ack_proc(  QJsonDocument &doc )
@@ -201,8 +226,6 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
                                     (1000 * t + 2000)
                                    );
     }
-
-    query_( on_pose_proc );
 
     return localRet;
 }
@@ -294,9 +317,6 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
     else
     { return -1; }
 
-    //! \note return the pose
-    query_( on_pose_proc );
-
     return localRet;
 }
 
@@ -334,6 +354,31 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
 
         localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+
+        ack_raw_status();
+
+        return localRet;
+    }
+    else if ( var.item == "stop" )
+
+    {
+        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
+
+        Q_ASSERT( NULL != m_pWorkingThread );
+        m_pWorkingThread->requestInterruption();
+
+        ack_raw_status();
+
+        return localRet;
+    }
+    //! 1. stop
+    //! 2. post package
+    else if ( var.item == "package" )
+    {
+        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
+
+        Q_ASSERT( NULL != m_pWorkingThread );
+        m_pWorkingThread->requestInterruption();
     }
     else
     {}
@@ -365,12 +410,8 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     else if ( var.item == "stop" )
     {
         //! \todo normal stop
-//        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
-        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
-//        ret = mrgRobotToolStop( local_vi(),
-//                                robot_handle() );
-//        ret = mrgRobotGoHomeStop( )
-
+        //! \note has stoped
+//        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
     }
     else if ( var.item == "package" )
     {
@@ -382,6 +423,8 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
                                -103
                                );
 
+        query_( on_parameter_proc );
+
     }
     else if ( var.item == "test" )
     {
@@ -389,8 +432,6 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     }
     else
     {}
-
-    query_( on_pose_proc );
 
     return localRet;
 }
@@ -512,23 +553,10 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     //! if the bg thread is running or the device is running
     Q_ASSERT( NULL != m_pExec );
     if ( m_pServer->status() == MAppServer::state_working )
-    { var.status = "running"; }
+    { var.status = "running"; logDbg(); }
     else
     {
-        var.status = "stoped";
-
-        char states[128];
-        localRet = mrgRobotGetState( local_vi(),
-                          robot_handle(),
-                          wave_table,
-                          states );
-        if ( localRet != 0 )
-        {}
-        else
-        {
-            var.status = QString( states ).toLower();
-        }
-
+        return on_device_status_raw_proc( doc );
     }
 
     json_obj( command );
@@ -538,6 +566,38 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
 
     return 0;
 }
+
+//! \note only the device status
+int MRX_T4Service::on_device_status_raw_proc( QJsonDocument &doc )
+{
+    pre_def( Intfdevice_status );
+
+    var.status = "exception_stopd";
+
+    char states[128];
+    localRet = mrgRobotGetState( local_vi(),
+                      robot_handle(),
+                      wave_table,
+                      states );
+    if ( localRet != 0 )
+    {}
+    else if ( QString( states ).toLower() == "idle" )
+    {
+        var.status = "stoped";
+    }
+    else
+    {
+        var.status = "running";
+    }
+
+    json_obj( command );
+    json_obj( status );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
 //! query
 int MRX_T4Service::on_exception_proc(  QJsonDocument &doc )
 {
@@ -737,11 +797,16 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
         float fHAngle;
         localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
                                             &fHAngle );
+        if ( localRet != 0 )
+        { return localRet; }
 
 
         float fw;
         localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
                                          &fw );
+        if ( localRet != 0 )
+        { return localRet; }
+
         //! align fw
         fw = 270 - fw;
         fw = alignP360( fw );
@@ -752,6 +817,17 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 
         var.w = fw;
         var.h = fHAngle;
+    }
+
+    //! distance sensor
+    for ( int i = 0; i < 4; i++ )
+    {
+        localRet = mrgMRQDistanceAlarmState_Query(  local_vi(), device_handle(),
+                                                    i, &iVal );
+        if ( localRet != 0 )
+        { return localRet; }
+
+        var.distance_sensors[i] = iVal > 0;
     }
 
     //! output the json
@@ -834,9 +910,9 @@ int MRX_T4Service::on_config_proc(  QJsonDocument &doc )
     deload_double( speed );
 
     //! config
-    pLocalServer->mStep = var.step;
-    pLocalServer->mJointStep = var.joint_step;
-    pLocalServer->mSpeed = var.speed;
+    pLocalServer->setStep( var.step );
+    pLocalServer->setJStep( var.joint_step );
+    pLocalServer->setSpeed( var.speed );
 
     //! post save
     //! \todo

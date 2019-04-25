@@ -136,7 +136,11 @@ MAppServer::ServerStatus MRX_T4Server::status()
     for ( int i = 0; i < mWorkings.size(); i++ )
     {
         if ( mWorkings.at(i)->isRunning() )
-        { return state_working; }
+        {
+            logDbg();
+            return state_working;
+        }
+
     }
 
     return state_idle;

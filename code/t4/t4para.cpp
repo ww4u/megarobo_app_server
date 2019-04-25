@@ -39,6 +39,28 @@ void T4Para::reset()
     mLinkStatus = "idle";
 }
 
+void T4Para::setStep( double step )
+{
+    if ( step < 1 || step > 100 )
+    { return; }
+
+    mStep = step;
+}
+void T4Para::setJStep( double step )
+{
+    if ( step < 1 || step > 100 )
+    { return; }
+
+    mJointStep = step;
+}
+void T4Para::setSpeed( double spd )
+{
+    if ( spd < 0.01 || spd > 1 )
+    { return; }
+
+    mSpeed = spd;
+}
+
 int T4Para::saveConfig()
 {
     Intfconfig var;

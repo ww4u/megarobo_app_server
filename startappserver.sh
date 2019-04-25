@@ -1,4 +1,4 @@
-sleep 30
+#sleep 30
 
 export QT_ROOT=/opt/QtARM_5.10.0_openGL
 #export QT_QPA_PLATFORM=linuxfb:fb="/dev/fb0"

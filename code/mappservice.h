@@ -100,8 +100,10 @@ protected:
     virtual void run();
 
 public:
-    int attachProc( MAppService *pObj,
+    int attachProc(  MAppService *pObj,
                      MAppService::P_PROC proc,
+                     MAppService::P_PROC preProc,
+                     MAppService::P_PROC postProc,
                      const QString &name,
                      QVariant var );
 
@@ -114,7 +116,13 @@ class ProxyApi
 {
 public:
     MAppService *m_pObj;
+
+    MAppService::P_PROC m_pPreProc;
+
     MAppService::P_PROC m_pProc;
+
+    MAppService::P_PROC m_pPostProc;
+
     QVariant mVar;
     QString mApiName;
 
@@ -126,6 +134,9 @@ public:
     {
         m_pObj = NULL;
         m_pProc = NULL;
+
+        m_pPreProc = NULL;
+        m_pPostProc = NULL;
 
         mTmo = 0;
         mLastTs = 0;
