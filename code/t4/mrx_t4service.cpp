@@ -93,7 +93,7 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
 
 MRX_T4Service::~MRX_T4Service()
 {
-    pre_quit();
+
 }
 
 bool MRX_T4Service::onUserEvent(QEvent *pEvent)

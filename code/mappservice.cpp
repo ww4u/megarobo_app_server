@@ -48,12 +48,8 @@ MAppService::~MAppService()
 {
     logDbg();
 
-    //! gc
-    if ( m_pExec != NULL )
-    {
-        m_pExec->requestInterruption();
-        delete m_pExec;
-    }
+    //! gc working
+    pre_quit();
 
     qDeleteAll( mProcMap );
 }
@@ -94,7 +90,7 @@ void MAppService::run()
 
     logDbg()<<QThread::currentThread()<<"end";
 
-    //! move to app
+    //! move to main thread
     moveToThread( QCoreApplication::instance()->thread() );
 }
 
@@ -276,11 +272,13 @@ void MAppService::output( const QJsonDocument &doc )
 //    mOutput.append( '#' );
 
     Q_ASSERT( NULL != m_pExec );
+    if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
+    {
+        QByteArray outAry = doc.toJson();
+        m_pExec->signal_output( outAry );
 
-    QByteArray outAry = doc.toJson();
-    m_pExec->signal_output( outAry );
-
-    sysLogOut( outAry );
+        sysLogOut( outAry );
+    }
 
 //    sysLogOut( mOutput );
 }
@@ -310,11 +308,29 @@ void MAppService::resetTimeout()
 
 void MAppService::pre_quit()
 {
+    //! request
+    if ( m_pExec != NULL )
+    { logDbg();
+        m_pExec->requestInterruption();
+    }
+
     if ( NULL != m_pWorkingThread )
     {
+        m_pWorkingThread->requestInterruption();
+    }
+
+    //! clean
+    if ( m_pExec != NULL )
+    {
+        m_pExec->wait();
+        delete m_pExec;
+        m_pExec = NULL;
+    }
+
+    if ( NULL != m_pWorkingThread )
+    {logDbg();
         m_pServer->disconnectWorking( m_pWorkingThread );
 
-        m_pWorkingThread->requestInterruption();
         m_pWorkingThread->wait();
         delete m_pWorkingThread;
         m_pWorkingThread = NULL;
