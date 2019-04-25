@@ -544,7 +544,6 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     pre_def( Intfdevice_status );
 
     //! if the bg thread is running or the device is running
-    Q_ASSERT( NULL != m_pExec );
     if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; logDbg(); }
     else

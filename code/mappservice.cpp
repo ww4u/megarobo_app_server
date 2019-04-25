@@ -92,6 +92,7 @@ void MAppService::run()
 
     //! move to main thread
     moveToThread( QCoreApplication::instance()->thread() );
+    logDbg();
 }
 
 bool MAppService::onUserEvent( QEvent *pEvent )
@@ -271,14 +272,19 @@ void MAppService::output( const QJsonDocument &doc )
     //! \note append the terminator
 //    mOutput.append( '#' );
 
-    Q_ASSERT( NULL != m_pExec );
+    QByteArray outAry = doc.toJson();
+
+    mExecMutex.lock();
     if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
     {
-        QByteArray outAry = doc.toJson();
         m_pExec->signal_output( outAry );
+
+        mExecMutex.unlock();
 
         sysLogOut( outAry );
     }
+    else
+    { mExecMutex.unlock(); }
 
 //    sysLogOut( mOutput );
 }
@@ -306,33 +312,78 @@ void MAppService::resetTimeout()
     logDbg_Thread();
 }
 
+#define WAIT_TIME_OUT   60000
 void MAppService::pre_quit()
 {
     //! request
     if ( m_pExec != NULL )
-    { logDbg();
-        m_pExec->requestInterruption();
-    }
-
-    if ( NULL != m_pWorkingThread )
     {
-        m_pWorkingThread->requestInterruption();
+        m_pExec->requestInterruption();
     }
 
     //! clean
     if ( m_pExec != NULL )
     {
-        m_pExec->wait();
-        delete m_pExec;
-        m_pExec = NULL;
+        do
+        {logDbg();
+            if ( m_pExec->wait( WAIT_TIME_OUT ) )
+            {logDbg();
+            }
+            else
+            {logDbg();
+                m_pExec->terminate();
+                if ( m_pExec->wait( WAIT_TIME_OUT ) )
+                {
+                }
+                else
+                {
+                    logWarning()<<"exec gc fail";
+                    break;
+                }
+            }
+
+            mExecMutex.lock();
+                delete m_pExec;
+                m_pExec = NULL;
+            mExecMutex.unlock();
+
+        }while( 0 );
+
+        mExecMutex.lock();
+            m_pExec = NULL;
+        mExecMutex.unlock();
+    }
+
+    //! working
+    if ( NULL != m_pWorkingThread )
+    {
+        m_pWorkingThread->requestInterruption();
     }
 
     if ( NULL != m_pWorkingThread )
-    {logDbg();
+    {
         m_pServer->disconnectWorking( m_pWorkingThread );
 
-        m_pWorkingThread->wait();
-        delete m_pWorkingThread;
+        do
+        {logDbg();
+            if ( m_pWorkingThread->wait( WAIT_TIME_OUT ) )
+            {logDbg();
+            }
+            else
+            {logDbg();
+                m_pWorkingThread->terminate();
+                if ( m_pWorkingThread->wait( WAIT_TIME_OUT ) )
+                { }
+                else
+                {
+                    logWarning()<<"exec gc fail";
+                    break;
+                }
+            }
+
+            delete m_pWorkingThread;
+        }while( 0 );
+
         m_pWorkingThread = NULL;
     }
 }
