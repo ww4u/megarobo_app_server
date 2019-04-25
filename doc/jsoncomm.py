@@ -124,6 +124,22 @@ if __name__=="__main__":
     # print ( robo.doRecv() )
 
     # time.sleep( 60 )
+
+    tSlp = 0.1
+    for i in range( 1000 ):
+        robo.step( 0 )
+        # time.sleep( tSlp )
+        robo.step( 90 )
+        # time.sleep( tSlp )
+        robo.step( 180 )
+        # time.sleep( tSlp )
+        robo.step( 270 )
+        # time.sleep( tSlp )
+
+    # time.sleep( 10 )
+
+    assert(False) 
+
     for i in range( 100000 ):
         var = robo.query( "meta" );print( var )
         time.sleep( 5 )

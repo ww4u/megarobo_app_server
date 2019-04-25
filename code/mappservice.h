@@ -34,7 +34,7 @@ public:
 
 public:
     explicit MAppService( qintptr ptr, QObject *parent = nullptr);
-    ~MAppService();
+    virtual ~MAppService();
 
 protected:
     virtual void run();
@@ -63,6 +63,8 @@ protected:
 
 protected:
     qintptr mPtr;
+
+    QMutex mSendMutex;
     QTcpSocket *m_pSocket;
 
     QByteArray mRecvCache;

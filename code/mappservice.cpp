@@ -272,6 +272,8 @@ void MAppService::output( const QJsonDocument &doc )
     //! \note append the terminator
 //    mOutput.append( '#' );
 
+    Q_ASSERT( NULL != m_pExec );
+
     QByteArray outAry = doc.toJson();
     m_pExec->signal_output( outAry );
 
@@ -373,9 +375,11 @@ void MAppService::slot_event_exit( QByteArray ary )
 
     if ( ary.size() > 0 )
     {//logDbg_Thread()<<ary;
-        m_pSocket->write( ary );
-        m_pSocket->flush();
-        ary.clear();
+        mSendMutex.lock();
+            m_pSocket->write( ary );
+            m_pSocket->flush();
+        mSendMutex.unlock();
+//        ary.clear();
     }
 }
 
