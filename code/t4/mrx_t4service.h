@@ -7,7 +7,8 @@ class MRX_T4Service : public MAppService
 {
 public:
     MRX_T4Service( qintptr ptr, QObject *parent = nullptr );
-    ~MRX_T4Service();
+    virtual ~MRX_T4Service();
+
 public:
     virtual bool onUserEvent(QEvent *pEvent);
 public:
