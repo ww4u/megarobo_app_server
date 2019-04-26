@@ -76,6 +76,9 @@ void MAppService::run()
     m_pExec->attachService( this );
     m_pExec->attachSocket( m_pSocket );
 
+    //! move to self thread
+    m_pExec->moveToThread( m_pExec );
+
     //! connect
     connect( m_pExec, SIGNAL(signal_event_enter()),
              this, SLOT(slot_event_enter()) );
@@ -83,7 +86,6 @@ void MAppService::run()
     connect( m_pExec, SIGNAL(signal_event_exit( QByteArray  )),
              this, SLOT(slot_event_exit( QByteArray )) );
 
-    m_pExec->moveToThread( m_pExec );
     m_pExec->start();
 
     QThread::run();
@@ -93,6 +95,18 @@ void MAppService::run()
     //! move to main thread
     moveToThread( QCoreApplication::instance()->thread() );
     logDbg();
+}
+
+bool MAppService::event(QEvent *event)
+{
+    //! output
+    if ( event->type() == MServiceEvent::e_serv_event_output )
+    {
+        on_event_output( event );
+        return true;
+    }
+
+    return QThread::event( event );
 }
 
 bool MAppService::onUserEvent( QEvent *pEvent )
@@ -277,9 +291,20 @@ void MAppService::output( const QJsonDocument &doc )
     mExecMutex.lock();
     if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
     {
-        m_pExec->signal_output( outAry );
+//        m_pExec->signal_output( outAry );
 
         mExecMutex.unlock();
+
+        do
+        {
+            MServiceEvent *pEvent = new MServiceEvent( MServiceEvent::e_serv_event_output );
+            if ( NULL == pEvent )
+            { break; }
+            pEvent->setPara( outAry );
+
+            qApp->postEvent( this, pEvent );
+
+        }while( false );
 
         sysLogOut( outAry );
     }
@@ -385,6 +410,25 @@ void MAppService::pre_quit()
         }while( 0 );
 
         m_pWorkingThread = NULL;
+    }
+}
+
+void MAppService::on_event_output( QEvent *pEvent )
+{
+    MServiceEvent *pServEvent = (MServiceEvent*)pEvent;
+    if ( NULL == pServEvent )
+    { return;  }
+
+    //! ary
+    QByteArray ary = pServEvent->mVar1.toByteArray();
+
+    if ( ary.size() > 0 )
+    {//logDbg_Thread()<<ary;
+        mSendMutex.lock();
+            m_pSocket->write( ary );
+            m_pSocket->flush();
+        mSendMutex.unlock();
+//        ary.clear();
     }
 }
 
