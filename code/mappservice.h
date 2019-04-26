@@ -15,6 +15,12 @@ class ProxyApi;
 class MServiceEvent : public QEvent
 {
 public:
+    enum eServiceEvent
+    {
+        e_serv_event_output = QEvent::User + 1
+    };
+
+public:
     MServiceEvent( int tpe );
 
     void setPara( QVariant v1, QVariant v2=0, QVariant v3=0 );
@@ -38,6 +44,9 @@ public:
 
 protected:
     virtual void run();
+
+    virtual bool event(QEvent *event);
+
 public:
     virtual bool onUserEvent( QEvent *pEvent );
 
@@ -62,6 +71,8 @@ protected:
     void resetTimeout();
 
     virtual void pre_quit();
+
+    void on_event_output( QEvent *pEvent );
 
 protected:
     qintptr mPtr;

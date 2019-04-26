@@ -53,7 +53,7 @@ void MAppExec::run()
 void MAppExec::postEvent( QEvent *pEvent )
 {
     mMutex.lock();
-    mEventQueue.enqueue( pEvent );
+        mEventQueue.enqueue( pEvent );
     mMutex.unlock();
 
     //! not running
