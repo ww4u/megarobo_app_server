@@ -21,6 +21,9 @@ public:
     void setJStep( double step );
     void setSpeed( double spd );
 
+    double localStep();
+    double localJStep();
+
     double localSpeedRatio();
 
     int saveConfig();
@@ -58,7 +61,7 @@ public:
     double mSpeed;      //! 1~100
 
     double mMaxJointSpeed, mMaxBodySpeed;
-
+    double mMaxJointStep, mMaxBodyStep;
                         //! points
     QList<ObjPoint *> mPoints;
 

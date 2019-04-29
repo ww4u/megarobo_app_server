@@ -349,7 +349,7 @@ void MAppService::resetTimeout()
 
     mbTmo = false;
     m_pTimer->start( mTimeout );
-    logDbg_Thread();
+//    logDbg_Thread();
 }
 
 #define WAIT_TIME_OUT   60000
@@ -525,7 +525,7 @@ void MAppService::slot_timeout()
         m_pTimer->setInterval( 10000 );
     }
 
-    logDbg_Thread();
+//    logDbg_Thread();
     mbTmo = true;
 }
 
