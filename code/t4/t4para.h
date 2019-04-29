@@ -47,7 +47,7 @@ public:
     double mCurrent[5];
     double mIdleCurrent[5];
 
-    QString mLinkStatus;
+//    QString mLinkStatus;
 
     int mTickTmo;
 
@@ -59,6 +59,9 @@ public:
 
                         //! points
     QList<ObjPoint *> mPoints;
+
+    //! dynamic
+    bool mbLink;
 };
 
 #endif // T4PARA_H

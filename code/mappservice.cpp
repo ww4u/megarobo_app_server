@@ -42,6 +42,8 @@ MAppService::MAppService(qintptr ptr, QObject *parent) : QThread(parent)
     mbTmo = false;
 
     mTimeout = 0;
+
+    connect( this, SIGNAL(finished()),this, SLOT(slot_finished()) );
 }
 
 MAppService::~MAppService()
@@ -105,6 +107,13 @@ bool MAppService::event(QEvent *event)
         on_event_output( event );
         return true;
     }
+    else if ( event->type() == MServiceEvent::e_serv_event_quit )
+    {
+        on_event_quit( event );
+        return true;
+    }
+    else
+    {}
 
     return QThread::event( event );
 }
@@ -282,13 +291,17 @@ void MAppService::proc( QJsonDocument &doc, quint64 &ts )
 
 void MAppService::output( const QJsonDocument &doc )
 {
-//    mOutput = doc.toJson();
-    //! \note append the terminator
-//    mOutput.append( '#' );
-
+    //! data length
     QByteArray outAry = doc.toJson();
     outAry = outAry.simplified();
     outAry.append('\n');
+
+    //! use the \n for seperator
+    outAry = outAry.simplified();
+    if ( outAry.length() > 0 )
+    { outAry.append('\n'); }
+    else
+    { return; }
 
     mExecMutex.lock();
     if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
@@ -435,6 +448,14 @@ void MAppService::on_event_output( QEvent *pEvent )
     }
 }
 
+void MAppService::on_event_quit( QEvent *pEvent )
+{ quit(); }
+
+void MAppService::slot_finished()
+{
+    emit signal_clean( this );
+}
+
 void MAppService::slot_dataIn( )
 {
     mSendMutex.lock();
@@ -446,6 +467,9 @@ void MAppService::slot_dataIn( )
 
     //! receive cache
     mRecvCache.append( ary );
+
+    //! register this
+    m_pServer->registerService( this );
 
     resetTimeout();
 
@@ -486,13 +510,20 @@ void MAppService::slot_timeout()
     //! output
     output( doc );
 
-    //! flush
-    slot_event_exit( mOutput );
-
+    //! close the timer
     if ( mbTmo )
-    { quit(); }
+    {
+        MServiceEvent *pEvent = new MServiceEvent( MServiceEvent::e_serv_event_quit );
+        if ( NULL == pEvent )
+        { return; }
+
+        qApp->postEvent( this, pEvent );
+    }
     else
-    {}
+    {
+        //! 10s leaving
+        m_pTimer->setInterval( 10000 );
+    }
 
     logDbg_Thread();
     mbTmo = true;

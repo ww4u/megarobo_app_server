@@ -146,6 +146,19 @@ MAppServer::ServerStatus MRX_T4Server::status()
     return state_idle;
 }
 
+void MRX_T4Server::on_dislink()
+{
+    mbLink = false;
+}
+
+bool MRX_T4Server::isLinked()
+{
+    if ( mbLink )
+    { return mServices.size() > 0; }
+    else
+    { return false; }
+}
+
 int MRX_T4Server::load()
 {
     int ret;

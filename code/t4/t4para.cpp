@@ -36,7 +36,7 @@ void T4Para::reset()
     mMaxBodySpeed = 100;    //! mm/s
     mMaxJointSpeed = 100;   //! degree/s
 
-    mLinkStatus = "idle";
+    mbLink = false;
 }
 
 void T4Para::setStep( double step )

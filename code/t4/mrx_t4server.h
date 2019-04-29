@@ -7,7 +7,7 @@
 class MRX_T4Server : public MAppServer, public T4Para
 {
 public:
-    MRX_T4Server( int portBase=2345, int cnt = 3,
+    MRX_T4Server( int portBase=2345, int cnt = 1,
                   QObject *pParent = nullptr );
 
 public:
@@ -17,6 +17,9 @@ public:
     virtual void close();
 
     virtual MAppServer::ServerStatus status();
+    virtual void on_dislink();
+    virtual bool isLinked();
+
 public:
     int load();
 

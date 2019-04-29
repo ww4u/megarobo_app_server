@@ -29,18 +29,30 @@ public:
 
     virtual ServerStatus status();
 
+    virtual void on_dislink();
+    virtual bool isLinked();
+
+    int services();
+    void registerService( QThread *pService );
+
 public:
     void connectWorking( WorkingThread *pWorking );
     void disconnectWorking( WorkingThread *pWorking );
+
+signals:
+
+protected Q_SLOTS:
+    void slot_clean( QThread * );
 
 protected:
     QList< MTcpServer *> mTcpServers;
     QList< quint16 > mPorts;
 
     QList<WorkingThread *> mWorkings;
-signals:
 
-public slots:
+    QMutex mServiceMutex;
+    QList<QThread*> mServices;
+
 };
 
 #endif // MAPPSERVER_H

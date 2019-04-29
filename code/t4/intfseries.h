@@ -96,7 +96,7 @@ public:
     Intflink_status( const QString cmd="link_status" ) : IntfObj( cmd )
     {}
 public:
-    QString status;
+    bool status;
 };
 
 class Intfdevice_status : public IntfObj
@@ -166,6 +166,7 @@ public:
 public:
     QString sn, alias, model;
     bool has_hand;
+    bool link;
 };
 
 class Intfconfig : public IntfObj

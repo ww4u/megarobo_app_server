@@ -17,7 +17,8 @@ class MServiceEvent : public QEvent
 public:
     enum eServiceEvent
     {
-        e_serv_event_output = QEvent::User + 1
+        e_serv_event_output = QEvent::User + 1,
+        e_serv_event_quit,
     };
 
 public:
@@ -73,6 +74,7 @@ protected:
     virtual void pre_quit();
 
     void on_event_output( QEvent *pEvent );
+    void on_event_quit( QEvent *pEvent );
 
 protected:
     qintptr mPtr;
@@ -96,8 +98,11 @@ protected:
     bool mbTmo;
     int mTimeout;
 signals:
+    void signal_clean( QThread* );
 
 public slots:
+    void slot_finished();
+
     void slot_dataIn( );
     void slot_disconnect();
 

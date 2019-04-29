@@ -1,5 +1,12 @@
 #dst_addr=192.168.1.127
-dst_addr=192.168.1.54
+if [ $# > 0 ]
+then
+  #echo $#
+  #echo $0 
+  dst_addr=192.168.1.54
+else
+  dst_addr=$1 
+fi
 #dst_addr=192.168.1.226
 
 #ssh root@$dst_addr mkdir /home/megarobo/appserver
