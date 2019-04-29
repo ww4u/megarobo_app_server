@@ -122,6 +122,7 @@ int MRX_T4Service::_on_preProc( QJsonDocument &doc )
 {
     int localRet;
 
+//    QThread::msleep( 50 );
     query_(on_device_status_proc );
 
     return localRet;

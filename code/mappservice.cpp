@@ -287,6 +287,8 @@ void MAppService::output( const QJsonDocument &doc )
 //    mOutput.append( '#' );
 
     QByteArray outAry = doc.toJson();
+    outAry = outAry.simplified();
+    outAry.append('\n');
 
     mExecMutex.lock();
     if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
@@ -422,11 +424,12 @@ void MAppService::on_event_output( QEvent *pEvent )
     //! ary
     QByteArray ary = pServEvent->mVar1.toByteArray();
 
-    if ( ary.size() > 0 )
+    if ( ary.size() > 0 && m_pSocket->isOpen() && m_pSocket->isWritable() )
     {//logDbg_Thread()<<ary;
         mSendMutex.lock();
             m_pSocket->write( ary );
             m_pSocket->flush();
+//            QThread::msleep( 10 );
         mSendMutex.unlock();
 //        ary.clear();
     }
@@ -434,7 +437,9 @@ void MAppService::on_event_output( QEvent *pEvent )
 
 void MAppService::slot_dataIn( )
 {
-    QByteArray ary = m_pSocket->readAll();
+    mSendMutex.lock();
+        QByteArray ary = m_pSocket->readAll();
+    mSendMutex.unlock();
 
     if ( sysHasArg("-showin") )
     { logDbg()<<ary; }
