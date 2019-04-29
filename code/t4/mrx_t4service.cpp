@@ -181,15 +181,15 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     {
         if ( var.z == 0 )
         {
-            lx = pLocalServer->mStep * sin( deg_to_rad(var.angle) );
-            ly = - pLocalServer->mStep * cos( deg_to_rad(var.angle) );
-            lz = pLocalServer->mStep * var.z;
+            lx = pLocalServer->localStep() * sin( deg_to_rad(var.angle) );
+            ly = - pLocalServer->localStep() * cos( deg_to_rad(var.angle) );
+            lz = pLocalServer->localStep() * var.z;
         }
         else
         {
             lx = 0;
             ly = 0;
-            lz = pLocalServer->mStep * var.z;logDbg()<<lz<<pLocalServer->mStep;
+            lz = pLocalServer->localStep() * var.z;
         }
     }
 
@@ -265,8 +265,8 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                                          device_handle(),
                                          3,
                                          wave_table,
-                                         var.value * pLocalServer->mJointStep,
-                                         pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
+                                         var.value * pLocalServer->localJStep(),
+                                         pLocalServer->localJStep() / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
                                          tmoms );
             }
             else
@@ -275,6 +275,7 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                 float normAngle = 270 - var.value;
                 normAngle = alignP360( normAngle );
 
+                //! \note config the speed not time
                 tmoms = guessTmo( 3, 360, pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
                 localRet = mrgSetRobotWristPose( local_vi(),
                                                       robot_handle(),
@@ -302,8 +303,8 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                                      device_handle(),
                                      4,
                                      wave_table,
-                                     var.value * pLocalServer->mJointStep,
-                                     pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
+                                     var.value * pLocalServer->localJStep(),
+                                     pLocalServer->localJStep() / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
                                      tmoms );
         }
     }

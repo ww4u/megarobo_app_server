@@ -34,7 +34,10 @@ void T4Para::reset()
     mSpeed = 20;
 
     mMaxBodySpeed = 100;    //! mm/s
-    mMaxJointSpeed = 100;   //! degree/s
+    mMaxJointSpeed = 60;    //! degree/s
+
+    mMaxJointStep = 100;
+    mMaxBodyStep = 60;
 
     mbLink = false;
 }
@@ -59,6 +62,15 @@ void T4Para::setSpeed( double spd )
     { return; }
 
     mSpeed = spd;
+}
+
+double T4Para::localStep()
+{
+    return mMaxBodyStep * mStep / 100;
+}
+double T4Para::localJStep()
+{
+    return mMaxJointStep * mJointStep / 100;
 }
 
 double T4Para::localSpeedRatio()
