@@ -195,7 +195,7 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
 
     //! guess t
     double dist = distance( lx, ly, lz, 0,0,0 );
-    double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->mSpeed;
+    double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->localSpeedRatio();
 
     if ( var.continous )
     {
@@ -205,7 +205,7 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
                                    lx,
                                    ly,
                                    lz,
-                                   pLocalServer->mMaxBodySpeed * pLocalServer->mSpeed );
+                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
     }
     else
     {
@@ -252,21 +252,21 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
             localRet = mrgRobotJointMoveOn( local_vi(),
                                  robot_handle(),
                                  3,
-                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
-            logDbg()<<pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed;
+                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
+            logDbg()<<pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio();
         }
         else
         {
             //! step proc
             if ( qAbs(var.value) == 1 )
             {
-                tmoms = guessTmo( 3, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+                tmoms = guessTmo( 3, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
                 localRet = mrgMRQAdjust( local_vi(),
                                          device_handle(),
                                          3,
                                          wave_table,
                                          var.value * pLocalServer->mJointStep,
-                                         pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                         pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
                                          tmoms );
             }
             else
@@ -275,11 +275,11 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                 float normAngle = 270 - var.value;
                 normAngle = alignP360( normAngle );
 
-                tmoms = guessTmo( 3, 360, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+                tmoms = guessTmo( 3, 360, pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
                 localRet = mrgSetRobotWristPose( local_vi(),
                                                       robot_handle(),
                                                       normAngle,
-                                                      pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed,
+                                                      pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio(),
                                                       tmoms );
             }
         }
@@ -293,17 +293,17 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
             localRet = mrgRobotJointMoveOn( local_vi(),
                                  robot_handle(),
                                  4,
-                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+                                 var.value * pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
         }
         else
         {
-            tmoms = guessTmo( 4, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->mSpeed );
+            tmoms = guessTmo( 4, var.value, pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
             localRet = mrgMRQAdjust( local_vi(),
                                      device_handle(),
                                      4,
                                      wave_table,
                                      var.value * pLocalServer->mJointStep,
-                                     pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->mSpeed,
+                                     pLocalServer->mJointStep / pLocalServer->mMaxJointSpeed / pLocalServer->localSpeedRatio(),
                                      tmoms );
         }
     }
@@ -712,25 +712,34 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
                                           var.micro_steps + i );
 
         //! tunning
-        mrgMRQDriverTuningState_Query( local_vi(),
+        localRet = mrgMRQDriverTuningState_Query( local_vi(),
                                        device_handle(),
                                        i,
                                        &iVal );
+        if ( localRet != 0 )
+        { return localRet; }
+
         var.tunning[ i ] = iVal > 0;
 
         //!
         int a, b;
-        mrgMRQMotorGearRatio_Query( local_vi(), device_handle(),
+        localRet = mrgMRQMotorGearRatio_Query( local_vi(), device_handle(),
                                     i,
                                     &a, &b );
+        if ( localRet != 0 )
+        { return localRet; }
+
         var.slow_ratio[i] = a;
     }
 
     //! dio
     unsigned short ioState;
-    mrgGetMRQDioState( local_vi(),
+    localRet = mrgGetMRQDioState( local_vi(),
                        device_handle(),
                        &ioState );
+    if ( localRet != 0 )
+    { return localRet; }
+
     var.hand_io[0] = get_bit( ioState, 3 );
     var.hand_io[1] = get_bit( ioState, 2 );
 
@@ -769,16 +778,20 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 //    var.distance_sensors[2] = false;
 //    var.distance_sensors[3] = false;
 
+    //! \note soft limit
     var.collide = true;
+    for ( int i = 0; i < 4; i++ )
+    {
+        localRet = mrgMRQAbsEncoderAlarmState_Query( local_vi(), device_handle(),
+                                                     i, &iVal );
+        if ( localRet != 0 )
+        { return localRet; }
+
+        var.collide = var.collide && ( iVal > 0 );
+    }
 
     var.max_joint_speed = _pLocalServer->mMaxJointSpeed;
     var.max_tcp_speed = _pLocalServer->mMaxBodySpeed;
-
-//    var.tunning[0] = true;
-//    var.tunning[1] = true;
-//    var.tunning[2] = true;
-//    var.tunning[3] = true;
-//    var.tunning[4] = true;
 
     //! x,y,z,w,h
     {
@@ -789,11 +802,7 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 
                                           &fx, &fy, &fz );
         if ( localRet != 0 )
-        {
-            fx = 0;
-            fy = 0;
-            fz = 0;
-        }
+        { return localRet; }
 
         float fHAngle;
         localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
