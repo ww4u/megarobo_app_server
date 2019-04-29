@@ -5,11 +5,14 @@
 
 class MRX_T4TcpServer : public MTcpServer
 {
+    Q_OBJECT
 public:
     MRX_T4TcpServer( QObject *parent = nullptr );
 
 protected:
     virtual void incomingConnection(qintptr socketDescriptor);
+
+protected:
 };
 
 #endif // MRX_T4SERVER_H

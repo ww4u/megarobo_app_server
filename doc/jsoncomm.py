@@ -74,6 +74,15 @@ class RoboT4():
         
         self.doCmd( joint_step )
 
+    def config( self ):
+        _config = {
+        "command": "config",
+        "step": 1,
+        "joint_step": 2,
+        "speed": 0.2
+        }  
+        self.doCmd( _config )      
+
     def status( self ):
         query_device_status = {
         "command":"query",
@@ -116,6 +125,11 @@ if __name__=="__main__":
     # robo = RoboT4( ip="169.254.1.2" )
     # robo = RoboT4( ip="127.0.0.1", port=2345 )
     robo = RoboT4( ip="127.0.0.1")
+    # robo = RoboT4( ip="192.168.1.54")
+
+    print( robo.query( "link_status" ) )
+    # robo.config()
+    exit( 0 )
 
     # for i in range( 100000 ):
     #     print( robo.status() )

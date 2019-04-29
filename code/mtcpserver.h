@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTcpServer>
+#include <QThread>
 
 #include "mappservice.h"
 
@@ -22,11 +23,12 @@ protected:
 public:
     bool start( quint16 port );
 
+protected Q_SLOTS:
+
 protected:
     MAppServer *m_pServer;
 
 private:
-    QList<MAppService *> mServices;
     quint16 mPort;
 
 signals:

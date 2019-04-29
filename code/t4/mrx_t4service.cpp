@@ -515,9 +515,9 @@ int MRX_T4Service::on_link_status_proc(  QJsonDocument &doc )
 {
     pre_def( Intflink_status );
 
-    deload_string( status );
+    deload_bool( status );
 
-    pLocalServer->mLinkStatus = var.status;
+    pLocalServer->mbLink = var.status;
 
     doc.setObject( obj );
 
@@ -529,7 +529,7 @@ int MRX_T4Service::on_link_status_proc_q(  QJsonDocument &doc )
 {
     pre_def( Intflink_status );
 
-    var.status = pLocalServer->mLinkStatus;
+    var.status = pLocalServer->isLinked();
 
     json_obj( command );
     json_obj( status );
@@ -623,18 +623,27 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
                                       &fx, &fy, &fz );
     if ( localRet != 0 )
     {
-        fx = 0;
-        fy = 0;
-        fz = 0;
+        logWarning()<<"read pos fail";
+        return localRet;
     }
 
     float fHAngle, fw;
     localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
                                         &fHAngle );
-
+    if ( localRet != 0 )
+    {
+        logWarning()<<"read tool fail";
+        return localRet;
+    }
 
     localRet = mrgGetRobotWristPose( local_vi(), robot_handle(),
                           &fw );
+    if ( localRet != 0 )
+    {
+        logWarning()<<"read wrist fail";
+        return localRet;
+    }
+
     //! align fw
     fw = 270 - fw;
     fw = alignP360( fw );
@@ -880,6 +889,7 @@ int MRX_T4Service::on_meta_proc( QJsonDocument &doc )
     var.model = pServer->mModel;
     var.alias = pServer->mAlias;
     var.has_hand = pServer->mbHasHand;
+    var.link = pServer->isLinked();
 
     json_obj( command );
     json_obj( sn );
@@ -887,6 +897,8 @@ int MRX_T4Service::on_meta_proc( QJsonDocument &doc )
     json_obj( alias );
 
     json_obj( has_hand );
+
+    json_obj( link );
 
     //! return obj
     doc.setObject( obj );
