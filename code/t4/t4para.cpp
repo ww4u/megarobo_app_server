@@ -27,11 +27,11 @@ void T4Para::reset()
     mbHasHand = true;
 
     //! tick timeout
-    mTickTmo = 15 * 60 * 1000;
+    mTickTmo = 10 * 60 * 1000;
 
     mStep = 10;
     mJointStep = 5;
-    mSpeed = 1.0;
+    mSpeed = 20;
 
     mMaxBodySpeed = 100;    //! mm/s
     mMaxJointSpeed = 100;   //! degree/s
@@ -55,10 +55,15 @@ void T4Para::setJStep( double step )
 }
 void T4Para::setSpeed( double spd )
 {
-    if ( spd < 0.01 || spd > 1 )
+    if ( spd < 1 || spd > 100 )
     { return; }
 
     mSpeed = spd;
+}
+
+double T4Para::localSpeedRatio()
+{
+    return mSpeed/100;
 }
 
 int T4Para::saveConfig()

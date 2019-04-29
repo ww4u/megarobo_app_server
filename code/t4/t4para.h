@@ -21,6 +21,8 @@ public:
     void setJStep( double step );
     void setSpeed( double spd );
 
+    double localSpeedRatio();
+
     int saveConfig();
     int loadConfig();
 
@@ -53,7 +55,7 @@ public:
 
     double mStep;       //! 1~100
     double mJointStep;  //! 1~100
-    double mSpeed;      //! 0.01~1
+    double mSpeed;      //! 1~100
 
     double mMaxJointSpeed, mMaxBodySpeed;
 
