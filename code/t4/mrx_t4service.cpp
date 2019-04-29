@@ -789,6 +789,7 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
         { return localRet; }
 
         var.collide = var.collide && ( iVal > 0 );
+
     }
 
     var.max_joint_speed = _pLocalServer->mMaxJointSpeed;
