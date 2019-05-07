@@ -7,6 +7,7 @@
 
 #include "mydebug.h"
 #include "./t4/mrx_t4server.h"
+#include "./lte/let_server.h"
 
 #include "syspara.h"
 
@@ -29,6 +30,8 @@ int main(int argc, char *argv[])
     //! servers
 //    MRX_T4Server server( 2345 );
     MRX_T4Server server( 50000 );
+
+//    Let_Server server( 2345 );
     ret = server.start();
     logDbg()<<ret;
 

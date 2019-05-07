@@ -8,6 +8,50 @@
 
 #include "mappexec.h"
 
+#define distance( x, y, z, x1, y1, z1 ) ( sqrt( pow(  x - x1, 2) + \
+                   pow(  y - y1, 2) + \
+                   pow(  z - z1, 2) \
+                   ) )
+
+
+#define api_type    MAppService::P_PROC
+
+#define query_( proc )  { QJsonDocument localDoc;\
+                        localRet = proc( localDoc );\
+                        if ( localRet != 0 )\
+                        { return localRet; }\
+                        \
+                        output( localDoc ); }
+
+#define post_call( api )    Q_ASSERT( NULL != m_pWorkingThread );\
+                            localRet = m_pWorkingThread->attachProc( this, \
+                                                                     (MAppService::P_PROC)(&api_class::post_##api), \
+                                                                     (MAppService::P_PROC)(&api_class::_on_preProc), \
+                                                                     (MAppService::P_PROC)(&api_class::_on_postProc), \
+                                                                     QString("post_"#api), QVariant(doc) );\
+                            return localRet;
+
+#define check_connect() \
+Q_ASSERT ( m_pServer != NULL ); \
+api_server *_pLocalServer;\
+_pLocalServer = dynamic_cast<api_server*>(m_pServer); \
+if ( NULL == _pLocalServer )\
+{ return -1; }
+
+#define pre_def( type )  check_connect();\
+                         QJsonObject obj = doc.object();\
+                         type var;\
+                         int localRet = -1111;\
+                            \
+                        Q_ASSERT( NULL != m_pServer );\
+                        api_server *pLocalServer = (api_server*)m_pServer;
+
+#define wave_table          0
+
+#define local_vi()          _pLocalServer->deviceVi()
+#define device_handle()     _pLocalServer->deviceHandle()
+#define robot_handle()      _pLocalServer->robotHandle()
+
 class MAppServer;
 class WorkingThread;
 class ProxyApi;
@@ -54,9 +98,17 @@ public:
 public:
     virtual void attachServer( MAppServer *pServer );
 
+protected:
+    virtual int _on_preProc( QJsonDocument &doc );
+    virtual int _on_postProc( QJsonDocument &doc );
+
 public:
     void setTimeout( int tmo );
     int timeout();
+
+    void clearContinue();
+    void continueNext();
+    bool isPending();
 
 protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
@@ -75,6 +127,11 @@ protected:
 
     void on_event_output( QEvent *pEvent );
     void on_event_quit( QEvent *pEvent );
+
+    //! help api
+protected:
+    float motionTime( float dist, float v );
+    int   motionTimeoutms( float dist, float v );
 
 protected:
     qintptr mPtr;
@@ -97,6 +154,9 @@ protected:
     QTimer *m_pTimer;
     bool mbTmo;
     int mTimeout;
+
+    QSemaphore mContSemaphore;      //! semaphore
+    QSemaphore mPendSema;
 signals:
     void signal_clean( QThread* );
 
@@ -113,7 +173,6 @@ public slots:
 
     void slot_on_socket_error( QAbstractSocket::SocketError err );
     void slot_on_socket_disconnect();
-
 
 };
 
@@ -136,6 +195,7 @@ public:
 protected:
     QQueue<ProxyApi*> mQueue;
     QMutex mMutex;
+
 };
 
 class ProxyApi

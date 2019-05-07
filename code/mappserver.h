@@ -15,10 +15,11 @@ public:
     {
         state_idle,
         state_working,
+        state_pending,
     };
 
 public:
-    explicit MAppServer(QObject *parent = nullptr);
+    explicit MAppServer( int portBase, int cnt, QObject *parent = nullptr);
     virtual ~MAppServer();
 
 public:

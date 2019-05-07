@@ -2,6 +2,7 @@ import json
 import socket as SOCKET
 
 import time
+import math
 
 def doSomething( socket, dict ):
     dat = json.dumps(dict) + '#'
@@ -15,12 +16,12 @@ def doSomething( socket, dict ):
         pass 
         # time.sleep( 0.1 )                
 
-class RoboT4():
+class MegaRobo():
     def __init__( self, ip="127.0.0.1", port=50000 ):
 
         self.mSocket1 = SOCKET.socket()
-        self.mSocket2 = SOCKET.socket()
-        self.mSocket3 = SOCKET.socket()
+        # self.mSocket2 = SOCKET.socket()
+        # self.mSocket3 = SOCKET.socket()
 
         ipPort=( ip, port )
         self.mSocket1.connect( (ip,port) )
@@ -45,8 +46,52 @@ class RoboT4():
     def doRecv( self, socket=None ):
         socket = socket if socket is not None else self.mSocket1
         data = socket.recv( 2048 )
-        return data.decode()                    
+        return data.decode()  
 
+    def status( self ):
+        query_device_status = {
+        "command":"query",
+        "item": "device_status"
+        }
+
+        self.doCmd( query_device_status )
+        return self.doRecv()
+
+    def query( self, x ):
+        querycmd = {
+        "command":"query",
+        "item": x
+        }
+
+        self.doCmd( querycmd )
+        return self.doRecv()
+
+    def request( self, x ):
+        querycmd = {
+        "command":"request",
+        "item": x
+        }
+        self.doCmd( querycmd )
+
+    def waitX( self, sth, tmo = 120 ):
+        while ( tmo > 0 ):            
+            stat = self.status( )
+            # print( stat )
+            if( sth in stat ):
+                return True 
+            else:
+                pass
+            tmo -= 1
+            time.sleep(  1 )
+        raise Exception("time out")            
+        return False     
+
+    def waitIdle( self, tmo = 120 ):
+        return self.waitX( "stoped" )               
+
+class RoboT4( MegaRobo ):
+    def __init__( self, ip="127.0.0.1", port=50000 ):
+        MegaRobo.__init__( self, ip, port )
 
     def step( self, angle, z = 0, cont = False ):
         stepCmd = { "command": "step",
@@ -92,17 +137,17 @@ class RoboT4():
         self.doCmd( query_device_status )
         return self.doRecv()
 
-    def waitIdle( self, tmo = 120 ):
-        while ( tmo > 0 ):            
-            stat = self.status( )
-            if( "stoped" in stat ):
-                return True 
-            else:
-                pass
-            tmo -= 1
-            time.sleep(  1 )
-        raise Exception("time out")            
-        return False 
+    # def waitIdle( self, tmo = 120 ):
+    #     while ( tmo > 0 ):            
+    #         stat = self.status( )
+    #         if( "stoped" in stat ):
+    #             return True 
+    #         else:
+    #             pass
+    #         tmo -= 1
+    #         time.sleep(  1 )
+    #     raise Exception("time out")            
+    #     return False 
 
     def doAction( self, act ):
         action = {
@@ -111,24 +156,370 @@ class RoboT4():
         }
         self.doCmd( action )
 
-    def query( self, sth ):
-        query_arg = {
-        "command" : "query",
-        "item": sth
-        }   
-        self.doCmd( query_arg )
+    # def query( self, sth ):
+    #     query_arg = {
+    #     "command" : "query",
+    #     "item": sth
+    #     }   
+    #     self.doCmd( query_arg )
+    #     return self.doRecv()
+
+class LetRobo( MegaRobo ):
+    def __init__( self, ip="127.0.0.1", port = 2345 ):
+        MegaRobo.__init__( self, ip, port )
+
+    def request_home( self, v = 10 ):
+        localVar = {
+            "command": "request",
+            "item": "home",
+            "velocity": v
+        }
+        self.doCmd( localVar )
+
+    def request_to( self, x, y, z, v = 10  ):
+        localVar = {
+            "command": "request",
+            "item": "to",
+            "velocity": v,
+            "x": x,
+            "y": y,
+            "z": z
+        }
+        self.doCmd( localVar )                
+
+    def request_step( self, x, y, z, n = 1 ):
+        localVar = {
+            "command": "request",
+            "item": "step",
+            "velocity": 10,
+            "x": x,
+            "y": y,
+            "z": z,
+            "n": n 
+        }
+        self.doCmd( localVar )    
+
+    def request_origin( self, x, y, z, v ):
+        localVar = {
+            "command": "request",
+            "item": "origin",
+            "velocity": v,
+            "x": x,
+            "y": y,
+            "z": z
+        }
+        self.doCmd( localVar )   
+
+    def request_traceX( self, type="zigzagx",v=10, x=1, y=1, z= 0 ):
+        localVar = {
+            "command": "request",
+            "item": type,
+            "velocity": v,
+            "x": x,
+            "y": y,
+            "z": z,
+        }
+        self.doCmd( localVar )            
+
+    def request_continue( self ):
+        localVar = {
+            "command": "request",
+            "item": "continue"
+        }
+        self.doCmd( localVar )            
+
+    def config_rst( self ):
+        localVar = {
+            "command": "config",
+            "item":"rst",
+        }        
+        self.doCmd( localVar ) 
+
+    def config_orig( self, ox, oy, oz ):
+        localVar = {
+            "command": "config",
+            "item":"origin",
+            "x": ox, 
+            "y": oy, 
+            "z": oz, 
+        }        
+        self.doCmd( localVar ) 
+
+    def config_whz( self, w, h, z ):
+        localVar = {
+            "command": "config",
+            "item":"whz",
+            "w": w, 
+            "h": h, 
+            "d": z, 
+        }        
+        self.doCmd( localVar )           
+
+    def config_dwdhdz( self, dw, dh, dz ):
+        localVar = {
+            "command": "config",
+            "item":"dwdhdz",
+            "dw": dw, 
+            "dh": dh, 
+            "dd": dz, 
+        }        
+        self.doCmd( localVar )           
+
+    def config_rv( self,  rv):
+        localVar = {
+            "command": "config",
+            "item":"rv",
+            "rv": rv
+        }        
+        self.doCmd( localVar )           
+
+    def status( self ):
+        query_device_status = {
+        "command":"query",
+        "item": "status"
+        }
+
+        self.doCmd( query_device_status )
         return self.doRecv()
+
+    def pose( self ):
+        jsondata = self.query( "pose" )        
+        obj = json.loads( jsondata )
+        return ( obj["x"], obj["y"], obj["z"], obj["vx"], obj["vy"], obj["vz"] )
+
+def let_check_pos( robo, pos, err = 1, api=None, para=None ):
+
+    if ( api != None ):
+        if ( para ):
+            api( para )
+        else:
+            api()            
+
+    posN = robo.pose()
+    dist = 0
+    for i in range( 3 ):
+        dist += pow( pos[i]-posN[i], 2 )
+    dist = math.sqrt( dist )
+    if ( dist > err ):
+        print( pos )
+        print( posN )
+        assert(False)
+    else:
+        pass         
+
+def let_test_rst( robo ):
+    robo.config_orig( 0,0,0 )
+    robo.request_home( 50 )
+    robo.waitIdle()
+
+def let_test_home( robo ):
+
+    def moveProc():
+        robo.request_to( 3,5,2 )
+        robo.waitIdle()
+
+    def localHome( speed ):
+        robo.request_home( speed )
+        robo.waitIdle()
+
+    moveProc()
+
+    # home1
+    # check pos
+    let_check_pos( robo, (0,0,0), api=localHome, para=( 10 ) )
+
+    let_check_pos( robo, (3,5,1), api = moveProc )
+
+    # home2
+    let_check_pos( robo, (0,0,0), api=localHome, para=( 1 ) )
+
+def let_test_origin( robo ):
+
+    def moveProc( speed ):
+        robo.request_origin( 10,20,3, speed )
+        robo.waitIdle()
+    
+    let_check_pos( robo, (0,0,0), api=moveProc, para=( 10 ) )
+
+    let_check_pos( robo, (0,0,0), api=moveProc, para=( 5 ) )
+
+def let_test_to( robo ):
+    robo.request_to( 5,4,6 )
+    robo.waitIdle( )
+
+    let_check_pos( robo, (5,4,6) )
+
+def let_test_step( robo ):
+    let_test_rst( robo )
+
+    # check x
+    robo.request_step( 10,0,0 )
+    robo.waitIdle()
+    let_check_pos( robo, (10,0,0) )
+
+    # check y
+    robo.request_step( 0,15,0 )
+    robo.waitIdle()
+    let_check_pos( robo, (10,15,0) )
+
+    # check z
+    robo.request_step( 0,0,5 )
+    robo.waitIdle()
+    let_check_pos( robo, (10,15,5) )
+
+def let_test_stepn( robo ):
+    let_test_rst( robo )
+
+    robo.request_step( 10,0,0, 3 )
+    robo.waitX( "pending" )
+    let_check_pos( robo, (10,0,0 ) )
+
+    robo.request_continue()
+    robo.waitX( "pending" )
+    let_check_pos( robo, (20,0,0) )
+
+    robo.request_continue()
+    robo.waitIdle()
+    let_check_pos( robo, (30,0,0) )
+
+    # step again, normal stop
+    let_test_rst( robo )
+
+    robo.request_step( 10,0,0, 3 )
+    robo.waitX( "pending" )
+    let_check_pos( robo, (10,0,0 ) )
+
+    robo.request( "stop" )
+    robo.waitIdle()
+
+    # step again, e stop
+    let_test_rst( robo )
+
+    robo.request_step( 10,0,0, 3 )
+    robo.waitX( "pending" )
+    let_check_pos( robo, (10,0,0 ) )
+
+    robo.request( "estop" )
+    robo.waitIdle()
+
+def let_test_zigzag_x( robo ):
+    let_test_rst( robo )
+    robo.request_traceX( type="zigzagx" )    
+    robo.waitIdle()
+
+    let_check_pos( robo, (50,60,0) )
+
+def let_test_zigzag_y( robo ):
+    let_test_rst( robo )
+    robo.request_traceX( type="zigzagy" )    
+    robo.waitIdle()
+
+    let_check_pos( robo, (50,60,0) )
+
+def let_test_snake_x( robo ):
+    let_test_rst( robo )
+    robo.request_traceX( type="snakex" )    
+    robo.waitIdle()
+
+    let_check_pos( robo, (50,60,0) )
+
+def let_test_snake_y( robo ):
+    let_test_rst( robo )
+    robo.request_traceX( type="snakey" )    
+    robo.waitIdle()
+
+    let_check_pos( robo, (0,60,0) )
+
+def let_test_slope(robo ):
+    let_test_rst( robo )
+    robo.request_traceX( type="slope", x=40,y=60 )    
+    robo.waitIdle()
+
+    let_check_pos( robo, (40,60,0) )
+
+def testMain( robo ):
+    let_test_rst( robo )
+
+    # let_test_home( robo ) 
+
+    # let_test_to( robo )
+
+    # let_test_step( robo )
+
+    # let_test_stepn( robo )
+
+    # let_test_zigzag_x( robo )
+    # let_test_zigzag_y( robo )
+    # let_test_snake_x( robo )
+    # let_test_snake_y( robo )
+
+    # let_test_slope( robo )
+
+    print( robo.pose() )
 
 if __name__=="__main__":
 # def roboFlow():
-    # robo = RoboT4( )
-    # robo = RoboT4( ip="169.254.1.2" )
-    # robo = RoboT4( ip="127.0.0.1", port=2345 )
-    robo = RoboT4( ip="127.0.0.1")
-    # robo = RoboT4( ip="192.168.1.54")
 
-    print( robo.query( "link_status" ) )
-    # robo.config()
+    robo = LetRobo( )
+    print( robo.pose() )
+
+    testMain( robo )
+
+    exit( 0 )
+
+    # let_test_home( robo )
+
+    # assert( False )
+
+    # robo.request_home( 5 )
+    # robo.waitIdle( )
+
+    # query
+    # robo.config_rst()
+    # robo.config_whz( 30,60,20 )
+    # robo.config_dwdhdz( 5,6,4)
+    # robo.config_rv( 10 )
+    # robo.config_orig( 10,20,5 )
+
+    print( robo.query( "config" ) )
+    print( robo.query( "pose" ) )
+    print( robo.query( "status" ) )
+
+    # config
+
+
+    # robo.request_zigzagX()
+    # robo.request_traceX( "zigzagx")
+    # robo.request_traceX( "zigzagy")
+    # robo.request_traceX( "snakex")
+    # robo.request_traceX( "snakey")
+    # robo.request_traceX( type = "slope", v = 10, x = 50, y=50, z=0 )
+    # robo.waitIdle( )
+
+    robo.request_to( 3, 5, 6 )
+    # robo.request( "stop" )
+    robo.waitIdle( )
+    print( robo.query( "pose") )
+
+    # robo.request_step(10,0,0, 5 )
+
+    # robo.request_continue()
+    # print( robo.query_x( "status") )
+    # robo.request_continue()
+    # robo.request_continue()
+    # robo.request_continue()
+    # print( robo.query_x( "status") )
+
+    # print( robo.query_x( "pose") )
+
+    # robo.config_orig( 1,2,3)
+
+    # print( robo.query_x( "config") )
+    # print( robo.query_x( "status") )
+
+    # robo = RoboT4( ip="127.0.0.1")
+    # print( robo.query( "link_status" ) )
+    time.sleep( 10 )
     exit( 0 )
 
     # for i in range( 100000 ):

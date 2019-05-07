@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QCoreApplication>
+#include <float.h>
 
 #include "mappexec.h"
 #include "syspara.h"
@@ -130,10 +131,27 @@ void MAppService::attachServer( MAppServer *pServer )
     m_pServer = pServer;
 }
 
+int MAppService::_on_preProc( QJsonDocument &doc )
+{ return 0; }
+int MAppService::_on_postProc( QJsonDocument &doc )
+{ return 0; }
+
 void MAppService::setTimeout( int tmo )
 { mTimeout = tmo; }
 int MAppService::timeout()
 { return mTimeout; }
+
+void MAppService::clearContinue()
+{
+    mContSemaphore.acquire( mContSemaphore.available() );
+}
+void MAppService::continueNext()
+{ mContSemaphore.release(); }
+
+bool MAppService::isPending()
+{
+    return ( mPendSema.available() > 0 && mContSemaphore.available() < 1 );
+}
 
 //! post event
 void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
@@ -299,7 +317,7 @@ void MAppService::output( const QJsonDocument &doc )
     //! use the \n for seperator
     outAry = outAry.simplified();
     if ( outAry.length() > 0 )
-    { outAry.append('\n'); }
+    { outAry.append("\r\n"); }  //! \note control the \r\n
     else
     { return; }
 
@@ -450,6 +468,25 @@ void MAppService::on_event_output( QEvent *pEvent )
 
 void MAppService::on_event_quit( QEvent *pEvent )
 { quit(); }
+
+float MAppService::motionTime( float dist, float v )
+{
+    if ( qAbs( v ) < FLT_EPSILON )
+    { v = FLT_EPSILON; }
+
+    //! \note no move time
+    if ( qAbs(dist) < FLT_EPSILON )
+    { return 0.1; }
+
+    return qAbs( dist / v );
+}
+int MAppService::motionTimeoutms( float dist, float v )
+{
+    float motionT = motionTime( dist, v );
+
+    //! motionTime + calc time + comm time
+    return ( motionT + dist * 0.5 + 0.5 ) * 1000;
+}
 
 void MAppService::slot_finished()
 {

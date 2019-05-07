@@ -39,8 +39,6 @@ protected:
     int _loadDataSet( QJsonDocument &doc,
                       QList< ObjPoint * > &localPoints);
 
-    int assurePath( const QString &path );
-
 public:
     int _dataDataToArray( QJsonArray &obj );
 
@@ -51,8 +49,6 @@ public:
 
     double mCurrent[5];
     double mIdleCurrent[5];
-
-//    QString mLinkStatus;
 
     int mTickTmo;
 

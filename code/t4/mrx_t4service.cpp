@@ -12,20 +12,20 @@
 
 #define deg_to_rad( deg )   ( (deg)* M_PI /180)
 
-#define distance( x, y, z, x1, y1, z1 ) ( sqrt( pow(  x - x1, 2) + \
-                   pow(  y - y1, 2) + \
-                   pow(  z - z1, 2) \
-                   ) )
+
 
 #define get_bit( d, n )     ( ( d >> n ) & 1 )
 
+#define api_class   MRX_T4Service
+#define api_server  MRX_T4Server
+
+/*
 #define check_connect() \
 Q_ASSERT ( m_pServer != NULL ); \
-MRX_T4Server *_pLocalServer;\
-_pLocalServer = dynamic_cast<MRX_T4Server*>(m_pServer); \
+api_server *_pLocalServer;\
+_pLocalServer = dynamic_cast<api_server*>(m_pServer); \
 if ( NULL == _pLocalServer )\
 { return -1; }
-
 
 #define pre_def( type )  check_connect();\
                          QJsonObject obj = doc.object();\
@@ -33,10 +33,10 @@ if ( NULL == _pLocalServer )\
                          int localRet = -1111;\
                             \
                         Q_ASSERT( NULL != m_pServer );\
-                        MRX_T4Server *pLocalServer = (MRX_T4Server*)m_pServer;
-
+                        api_server *pLocalServer = (api_server*)m_pServer;
+*/
+/*
 #define api_type    MAppService::P_PROC
-#define api_class   MRX_T4Service
 
 #define local_vi()          _pLocalServer->deviceVi()
 #define device_handle()     _pLocalServer->deviceHandle()
@@ -51,13 +51,16 @@ if ( NULL == _pLocalServer )\
                                                                      (MAppService::P_PROC)(&MRX_T4Service::_on_postProc), \
                                                                      QString("post_"#api), QVariant(doc) );\
                             return localRet;
+*/
 
+/*
 #define query_( proc )  { QJsonDocument localDoc;\
                         localRet = proc( localDoc );\
                         if ( localRet != 0 )\
                         { return localRet; }\
                         \
                         output( localDoc ); }
+*/
 
 #define ack_status( )   query_( on_pose_proc );query_( on_device_status_proc );
 
@@ -280,6 +283,7 @@ int MRX_T4Service::post_on_joint_step_proc(  QJsonDocument &doc )
                 tmoms = guessTmo( 3, 360, pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio() );
                 localRet = mrgSetRobotWristPose( local_vi(),
                                                       robot_handle(),
+                                                      wave_table,
                                                       normAngle,
                                                       pLocalServer->mMaxJointSpeed * pLocalServer->localSpeedRatio(),
                                                       tmoms );
@@ -630,8 +634,9 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
     }
 
     float fHAngle, fw;
-    localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
-                                        &fHAngle );
+    fHAngle = 0;
+//    localRet = mrgGetRobotToolPosition( local_vi(), robot_handle(),
+//                                        &fHAngle );
     if ( localRet != 0 )
     {
         logWarning()<<"read tool fail";

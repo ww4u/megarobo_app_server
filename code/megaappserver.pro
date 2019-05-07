@@ -28,8 +28,18 @@ SOURCES += main.cpp \
     t4/mrx_t4tcpserver.cpp \
     mappserver.cpp \
     t4/mrx_t4server.cpp \
-    syspara.cpp
+    syspara.cpp \
+    lte/letpara.cpp \
+    lte/let_tcpserver.cpp \
+    lte/let_service.cpp \
+    lte/let_server.cpp \
+    ../../pump/module/axes.cpp \
+    ../../pump/module/devicehandle.cpp \
+    ../../pump/module/device.cpp
 
+#    ../../pump/module/triggermgr.cpp \
+
+#    ../../pump/module/iomgr.cpp \
 HEADERS += \
     mappservice.h \
     serverintf.h \
@@ -44,11 +54,20 @@ HEADERS += \
     t4/mrx_t4tcpserver.h \
     mappserver.h \
     t4/mrx_t4server.h \
-    syspara.h
+    syspara.h \
+    lte/letpara.h \
+    lte/let_tcpserver.h \
+    lte/let_service.h \
+    lte/let_server.h \
+    lte/let_intfseries.h \
+    ../../pump/module/axes.h \
+    ../../pump/module/devicehandle.h \
+    ../../pump/module/device.h
 
 win32 {
 INCLUDEPATH += "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include"
-INCLUDEPATH += "G:/work/mct/source/device/libMegaGateway/src"
+INCLUDEPATH += "G:/work/mct/source/device/MegaGateway_SDK/src"
+INCLUDEPATH += "G:/work/pump/module"
 }
 
 linux-arm* {
