@@ -1,21 +1,15 @@
-#include "mrx_t4server.h"
-#include "mrx_t4tcpserver.h"
+#include "let_server.h"
+#include "let_tcpserver.h"
 
 #include "../mydebug.h"
 #include "MegaGateway.h"
 
-MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
+Let_Server::Let_Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
 {
-
-#ifndef _RASPBERRY
-//    mAddr = "TCPIP0::192.168.1.54::inst0::INSTR";        //! descriptor in case sensitive
-    mAddr = "TCPIP0::192.168.1.226::inst0::INSTR";        //! descriptor in case sensitive
-#else
-    mAddr = "TCPIP0::127.0.0.1::inst0::INSTR";
-#endif
+    mAddr = "TCPIP0::192.168.1.54::inst0::INSTR";        //! descriptor in case sensitive
 }
 
-int MRX_T4Server::start()
+int Let_Server::start()
 {
     int ret;
 
@@ -23,10 +17,10 @@ int MRX_T4Server::start()
     ret = load();
 
     //! create a few servers
-    MRX_T4TcpServer *pServer;
+    Let_TcpServer *pServer;
     foreach( quint16 port, mPorts )
     {
-        pServer = new MRX_T4TcpServer( this );
+        pServer = new Let_TcpServer( this );
         if ( NULL == pServer )
         { return -11; }
 
@@ -44,7 +38,7 @@ int MRX_T4Server::start()
     return ret;
 }
 
-int MRX_T4Server::open()
+int Let_Server::open()
 {
 //#ifdef QT_DEBUG
 //    mVi = 1;
@@ -74,6 +68,11 @@ int MRX_T4Server::open()
 
         mRobotHandle = names[0];
 
+        ret = mrgGetRobotType( mVi, mRobotHandle );
+        if ( ret < 0 )
+        { break; }
+        logDbg()<<"robot"<<ret;
+
         //! device handle
         int deviceHandles[16];
         ret = mrgGetRobotDevice( self_robot_var(), deviceHandles );
@@ -95,9 +94,14 @@ int MRX_T4Server::open()
             if ( idnList.size() < 4 )
             { return -1; }
 
-            mSn = idnList.at( 2 );
-            logDbg()<<strIdns;
-            logDbg()<<mSn;
+            mSN = idnList.at( 2 );
+            logDbg()<<mSN;
+
+            //! attach axes
+            mZAxes.attachDevice( mVi, mDeviceHandle );
+            mZAxes.attachAxes( 2 );
+
+//            mZAxes.zero();
         }
 
     }while( 0 );
@@ -112,7 +116,7 @@ int MRX_T4Server::open()
     return ret;
 }
 
-void MRX_T4Server::close()
+void Let_Server::close()
 {
     if ( mVi > 0 )
     {
@@ -121,46 +125,56 @@ void MRX_T4Server::close()
     }
 }
 
-MAppServer::ServerStatus MRX_T4Server::status()
+void Let_Server::rst()
+{
+    LetPara::rst();
+}
+
+MAppServer::ServerStatus Let_Server::status()
 {
     //! \todo the device status
+
+    //! service pending
+    for ( int i = 0; i < mServices.size(); i++ )
+    {
+        Q_ASSERT( (MAppService*)mServices.at(i) != NULL );
+        if ( ( (MAppService*)mServices.at(i) )->isPending() )
+        { return state_pending; }
+    }
 
     //! the self status
     for ( int i = 0; i < mWorkings.size(); i++ )
     {
         if ( mWorkings.at(i)->isRunning() )
-        {
-//            logDbg();
+        {   
             return state_working;
         }
-
     }
 
     return state_idle;
 }
 
-void MRX_T4Server::on_dislink()
+void Let_Server::on_dislink()
 {
-    mbLink = false;
+//    mbLink = false;
 }
 
-bool MRX_T4Server::isLinked()
+bool Let_Server::isLinked()
 {
-    if ( mbLink )
-    { return mServices.size() > 0; }
-    else
-    { return false; }
+//    if ( mbLink )
+//    { return mServices.size() > 0; }
+//    else
+//    { return false; }
+    return true;
 }
 
-int MRX_T4Server::load()
+int Let_Server::load()
 {
     int ret;
 
     ret = loadConfig();
     if ( ret != 0 )
     { return ret; }
-
-    ret = loadDataSet();
 
     return ret;
 }

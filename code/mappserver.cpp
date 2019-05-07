@@ -1,9 +1,13 @@
 #include "mappserver.h"
 #include "mtcpserver.h"
 #include "./mydebug.h"
-MAppServer::MAppServer(QObject *parent) : QObject(parent)
+MAppServer::MAppServer( int portBase, int cnt, QObject *parent) : QObject( parent)
 {
-
+    mPorts.clear();
+    for ( int i = 0; i < cnt; i++ )
+    {
+        mPorts<<(portBase+i);
+    }
 }
 
 MAppServer::~MAppServer()
@@ -36,7 +40,10 @@ int MAppServer::services()
 void MAppServer::registerService( QThread *pService )
 {
     mServiceMutex.lock();
-        mServices.append( pService );
+        if ( mServices.contains( pService ))
+        {}
+        else
+        { mServices.append( pService ); }
     mServiceMutex.unlock();
 }
 

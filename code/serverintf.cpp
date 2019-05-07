@@ -24,3 +24,6 @@ int ServerIntf::open()
 }
 void ServerIntf::close()
 {}
+
+void ServerIntf::rst()
+{}

@@ -21,6 +21,7 @@ public:
 public:
     virtual int open();
     virtual void close();
+    virtual void rst();
 
 protected:
     QString mAddr;

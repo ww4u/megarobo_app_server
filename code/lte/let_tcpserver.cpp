@@ -1,0 +1,33 @@
+#include "let_tcpserver.h"
+#include "let_service.h"
+
+#include "../mydebug.h"
+#include "MegaGateway.h"
+#include "let_server.h"
+
+Let_TcpServer::Let_TcpServer( QObject *parent ) : MTcpServer( parent )
+{
+
+}
+
+void Let_TcpServer::incomingConnection(qintptr socketDescriptor)
+{
+    //! self thread
+    MAppService *thread = new Let_Service(socketDescriptor, 0 );
+    thread->moveToThread( thread );
+
+    Q_ASSERT( NULL != m_pServer );
+    thread->attachServer( m_pServer );
+
+    Let_Server *pLocalServer = (Let_Server*)m_pServer;
+//    thread->setTimeout( pLocalServer->mTickTmo );
+
+    //! server connection
+    connect( thread, SIGNAL(signal_clean(QThread*)),
+             pLocalServer, SLOT(slot_clean(QThread*)));
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+
+//    logDbg()<<pLocalServer->mTickTmo;
+
+    thread->start();
+}

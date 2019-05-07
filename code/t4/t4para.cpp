@@ -155,6 +155,8 @@ int T4Para::loadConfig()
         deload_double( max_joint_speed );
         deload_double( max_body_speed )
     }
+    else
+    { return -1; }
 
     //! recover
     mTickTmo = var.timeout;
@@ -285,25 +287,6 @@ int T4Para::_loadDataSet( QJsonDocument &doc,
         pPoint->pose.h = pointObj.value( "h" ).toDouble();
 
         localPoints.append( pPoint );
-    }
-
-    return 0;
-}
-
-int T4Para::assurePath( const QString &path )
-{
-    //! create path
-    QDir dir( path );
-    if ( dir.exists() )
-    {}
-    else
-    {
-        if ( dir.mkpath( path) )
-        {}
-        else
-        {
-            return -1;
-        }
     }
 
     return 0;
