@@ -413,8 +413,7 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     }
     else if ( var.item == "package" )
     {
-        localRet = mrgGetRobotFold( local_vi(),robot_handle(),
-                               wave_table,
+        localRet = mrgSetRobotFold( local_vi(),robot_handle(),
                                0,
                                18.8,
                                -57.4,
