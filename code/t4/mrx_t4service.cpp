@@ -418,7 +418,8 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
                                0,
                                18.8,
                                -57.4,
-                               -103
+                               -103,
+                               120000
                                );
 
         query_( on_parameter_proc );
