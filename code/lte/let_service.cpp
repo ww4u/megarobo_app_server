@@ -57,6 +57,9 @@ int Let_Service::on_request( QJsonDocument &doc )
 
     if (  var.item == "home" )
     {
+        //! stop at first
+        on_action_stop( doc );
+
         post_call( on_action_home );
     }
     else if ( var.item == "origin" )
