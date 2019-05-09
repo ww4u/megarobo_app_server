@@ -164,13 +164,15 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
 
     //! home
     {
-        _pLocalServer->mZAxes.configZero( -var.velocity,
+        _pLocalServer->mZAxes.configZero( 10, //var.velocity,
                                           _pLocalServer->mZGap,
                                           _pLocalServer->mZGapSpeed );
 
         localRet = _pLocalServer->mZAxes.zero();
         if ( localRet != 0 )
         { return localRet; }
+
+//        _pLocalServer->mZAxes.move( wave_table, 0, 1, 0 );
 
         localRet = mrgRobotGoHome( local_vi(),
                                    robot_handle(),
@@ -333,7 +335,7 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
             localRet = mrgRobotRelMove( local_vi(),
                                  robot_handle(),
                                  wave_table,
-                                 var.x, var.y, var.z,
+                                 var.x, var.y, 0,
                                  t,
                                  tmoms );
             if ( localRet != 0 )
@@ -346,27 +348,6 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
 
             pend_for_next();
 
-//            mPendSema.release();
-//            {
-//                {
-//                    while( true )
-//                    {
-//                        if ( mContSemaphore.tryAcquire( 1, 1000 ) )
-//                        {
-//                            logDbg()<<"continue";
-//                            break;
-//                        }
-//                        else
-//                        { logDbg()<<"paused"; }
-
-//                        if ( QThread::currentThread()->isInterruptionRequested() )
-//                        { throw QException(); }
-//                    }
-//                }
-//            }
-//            mPendSema.acquire();
-//        }catch( QException &e )
-//        { throw e; }
         end_pend()
 
     }while( true );
@@ -431,8 +412,8 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
                             dy,
                             dz );
 
-    float t = motionTime( dist, var.velocity );
-    int tmoms = motionTimeoutms( dist, var.velocity );
+    float t = motionTime( qAbs(dx), var.velocity );
+    int tmoms = motionTimeoutms( qAbs(dx), var.velocity );
 
     begin_pend()
 
@@ -471,6 +452,9 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
                 { return localRet; }
             }
         }
+
+        //! home
+        post_on_action_home( doc );
     end_pend()
 
     return localRet;
@@ -527,8 +511,8 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
                             dy,
                             dz );
 
-    float t = motionTime( dist, var.velocity );
-    int tmoms = motionTimeoutms( dist, var.velocity );
+    float t = motionTime( qAbs(dy), var.velocity );
+    int tmoms = motionTimeoutms( qAbs(dy), var.velocity );
 
     begin_pend()
         for( int nx = 0; nx <= n; nx++ )
@@ -568,6 +552,9 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
                 logDbg()<<cx+dx<<cy<<cz;
             }
         }
+
+        //! home
+        post_on_action_home( doc );
     end_pend()
 
     return localRet;
@@ -627,8 +614,10 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
                             dy,
                             dz );
 
-    float t = motionTime( dist, var.velocity );
-    int tmoms = motionTimeoutms( dist, var.velocity );
+    float tx = motionTime( qAbs(dx), var.velocity );
+    float ty = motionTime( qAbs(dy), var.velocity );
+    int tmomsx = motionTimeoutms( qAbs(dx), var.velocity );
+    int tmomsy = motionTimeoutms( qAbs(dy), var.velocity );
 
     begin_pend()
         for( int nx = 0; nx < n; nx++ )
@@ -638,8 +627,8 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
                                  robot_handle(),
                                  wave_table,
                                  dx, 0, dz,
-                                 t,
-                                 tmoms );
+                                 tx,
+                                 tmomsx );
             if ( localRet != 0 )
             { return localRet; }
 
@@ -650,15 +639,16 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
                                  robot_handle(),
                                  wave_table,
                                  0, dy * ( (nx % 2) ? -1 : 1 ), dz,
-                                 t,
-                                 tmoms );
+                                 ty,
+                                 tmomsy );
             if ( localRet != 0 )
             { return localRet; }
 
             pend_for_next();
-
-
         }
+
+        //! home
+        post_on_action_home( doc );
     end_pend()
 
     return localRet;
@@ -718,8 +708,10 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
                             dy,
                             dz );
 
-    float t = motionTime( dist, var.velocity );
-    int tmoms = motionTimeoutms( dist, var.velocity );
+    float tx = motionTime( qAbs(dx), var.velocity );
+    float ty = motionTime( qAbs(dy), var.velocity );
+    int tmomsx = motionTimeoutms( qAbs(dx), var.velocity );
+    int tmomsy = motionTimeoutms( qAbs(dy), var.velocity );
 
     begin_pend()
         for( int my = 0; my < m; my++ )
@@ -729,8 +721,8 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
                                  robot_handle(),
                                  wave_table,
                                  0, dy, dz,
-                                 t,
-                                 tmoms );
+                                 ty,
+                                 tmomsy );
             if ( localRet != 0 )
             { return localRet; }
 
@@ -741,15 +733,15 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
                                  robot_handle(),
                                  wave_table,
                                  dx * ( (my % 2) ? -1 : 1 ), 0, dz,
-                                 t,
-                                 tmoms );
+                                 tx,
+                                 tmomsx );
             if ( localRet != 0 )
             { return localRet; }
 
            pend_for_next();
-
-
         }
+        //! home
+        post_on_action_home( doc );
     end_pend()
 
     return localRet;
@@ -878,7 +870,7 @@ int Let_Service::on_q_status( QJsonDocument &doc )
         }
 
         //! raw status
-        localRet = mrgRobotGetState( local_vi(),
+        localRet = mrgGetRobotStates( local_vi(),
                           robot_handle(),
                           wave_table,
                           states );

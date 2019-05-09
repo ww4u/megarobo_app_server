@@ -23,8 +23,8 @@ void LetPara::rst()
     mOy = 0;
     mOz = 0;
 
-    mW = 50;
-    mH = 50;
+    mW = 250;
+    mH = 320;
     mZ = 50;
 
     mdW = 10;
@@ -33,7 +33,7 @@ void LetPara::rst()
 
     mRV = 10;
 
-    mZGap = 1;
+    mZGap = -1;
     mZGapSpeed = 10;
 }
 

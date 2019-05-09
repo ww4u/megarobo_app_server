@@ -572,7 +572,7 @@ int MRX_T4Service::on_device_status_raw_proc( QJsonDocument &doc )
     var.status = "exception_stopd";
 
     char states[128];
-    localRet = mrgRobotGetState( local_vi(),
+    localRet = mrgGetRobotStates( local_vi(),
                       robot_handle(),
                       wave_table,
                       states );
