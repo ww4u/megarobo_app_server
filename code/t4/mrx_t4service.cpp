@@ -201,17 +201,18 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     double dist = distance( lx, ly, lz, 0,0,0 );
     double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->localSpeedRatio();
 
-    if ( var.continous )
-    {
-        localRet = mrgRobotMoveOn( local_vi(),
-                                   robot_handle(),
-                                   wave_table,
-                                   lx,
-                                   ly,
-                                   lz,
-                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
-    }
-    else
+    //! \note no move on
+//    if ( var.continous )
+//    {
+//        localRet = mrgRobotMoveOn( local_vi(),
+//                                   robot_handle(),
+//                                   wave_table,
+//                                   lx,
+//                                   ly,
+//                                   lz,
+//                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
+//    }
+//    else
     {
         localRet = mrgRobotRelMove( local_vi(),
                                     robot_handle(),
