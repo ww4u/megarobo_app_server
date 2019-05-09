@@ -11,6 +11,7 @@
 
 #include "syspara.h"
 
+#define _version_ "0.0.0.0"
 
 //! -logoutput
 //! -loginput
@@ -21,9 +22,10 @@ int main(int argc, char *argv[])
 
     sysSetArg( argc, argv );
 
-    qInfo( qApp->applicationVersion().toLatin1().data() );
+    qInfo()<<"Version:"<<_version_<<qApp->applicationVersion();
+//    qInfo( qApp->applicationVersion().toLatin1().data() );
 
-    logDbg()<<QDir::homePath();
+//    logDbg()<<QDir::homePath();
 
     int ret;
 

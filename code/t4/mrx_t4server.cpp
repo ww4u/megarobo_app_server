@@ -54,7 +54,7 @@ int MRX_T4Server::open()
     int ret;
 
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 500 );logDbg()<<vi;
+    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
     if ( vi > 0 )
     { mVi = vi; }
     else

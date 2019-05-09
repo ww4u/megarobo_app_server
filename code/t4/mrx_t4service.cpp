@@ -405,16 +405,22 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     else if ( var.item == "emergency_stop" )
     {
         //! \note has stoped
+
+//        ack_raw_status();
     }
     else if ( var.item == "stop" )
     {
         //! \todo normal stop
         //! \note has stoped
 //        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
+
+//        ack_raw_status();
     }
     else if ( var.item == "package" )
     {
-        localRet = mrgSetRobotFold( local_vi(),robot_handle(),
+        localRet = mrgSetRobotFold( local_vi(),
+                                    robot_handle(),
+                                    wave_table,
                                0,
                                18.8,
                                -57.4,
@@ -578,13 +584,13 @@ int MRX_T4Service::on_device_status_raw_proc( QJsonDocument &doc )
                       wave_table,
                       states );
     if ( localRet != 0 )
-    {}
+    { logError()<<"status read fail"; }
     else if ( QString( states ).toLower() == "idle" )
     {
         var.status = "stoped";
     }
     else
-    {
+    {logDbg();
         var.status = "running";
     }
 
