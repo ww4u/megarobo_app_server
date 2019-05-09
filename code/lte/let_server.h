@@ -26,6 +26,7 @@ public:
 public:
     int load();
 
+    int zpdir();
 public:
     Axes mZAxes;
 

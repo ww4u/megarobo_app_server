@@ -100,7 +100,7 @@ int Let_Server::open()
             //! attach axes
             mZAxes.attachDevice( mVi, mDeviceHandle );
             mZAxes.attachAxes( 2 );
-
+            mZAxes.setInvert( true );
 //            mZAxes.zero();
         }
 
@@ -177,4 +177,9 @@ int Let_Server::load()
     { return ret; }
 
     return ret;
+}
+
+int Let_Server::zpdir()
+{
+    return mZGap > 0 ? 1 : -1;
 }

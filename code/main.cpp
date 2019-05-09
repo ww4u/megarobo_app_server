@@ -11,7 +11,7 @@
 
 #include "syspara.h"
 
-#define _version_ "0.0.0.0"
+#define _version_ "0.0.0.1"
 
 //! -logoutput
 //! -loginput
@@ -22,15 +22,12 @@ int main(int argc, char *argv[])
 
     sysSetArg( argc, argv );
 
-    qInfo()<<"Version:"<<_version_<<qApp->applicationVersion();
-//    qInfo( qApp->applicationVersion().toLatin1().data() );
-
-//    logDbg()<<QDir::homePath();
+    //! \note for version
+    qInfo()<<"Verison:"<<_version_;
 
     int ret;
 
     //! servers
-//    MRX_T4Server server( 2345 );
     MRX_T4Server server( 50000 );
 
 //    Let_Server server( 2345 );
