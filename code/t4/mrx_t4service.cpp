@@ -404,7 +404,8 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     {
         //! \todo stop and home
         localRet = mrgRobotGoHome( local_vi(),
-                                   robot_handle(), 120000 );
+                                   robot_handle(),
+                                   120000 );
 
     }
     else if ( var.item == "emergency_stop" )

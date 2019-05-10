@@ -624,7 +624,9 @@ void WorkingThread::run()
             break;
         }
 
-        pApi = mQueue.dequeue();
+        mMutex.lock();
+            pApi = mQueue.dequeue();
+        mMutex.unlock();
         if ( NULL == pApi || NULL == pApi->m_pObj )
         { continue; }
 
@@ -654,8 +656,10 @@ void WorkingThread::run()
         {   
             delete pApi;
 
-            qDeleteAll( mQueue );
-            mQueue.clear();
+            mMutex.lock();
+                qDeleteAll( mQueue );
+                mQueue.clear();
+            mMutex.unlock();
 
             break;
         }
