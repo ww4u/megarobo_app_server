@@ -1,4 +1,3 @@
-
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -35,7 +34,6 @@ int main(int argc, char *argv[])
 //    Let_Server server( 2345 );
     ret = server.start();
     logDbg()<<ret;
-
     do
     {
         ret = server.open();
@@ -47,4 +45,3 @@ int main(int argc, char *argv[])
 
     return ret;
 }
-
