@@ -139,6 +139,7 @@ protected:
     QMutex mSendMutex;
     QTcpSocket *m_pSocket;
 
+    QMutex mRecvMutex;
     QByteArray mRecvCache;
     QByteArray mOutput;
 

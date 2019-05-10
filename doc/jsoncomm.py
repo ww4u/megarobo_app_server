@@ -271,7 +271,17 @@ class LetRobo( MegaRobo ):
             "item":"rv",
             "rv": rv
         }        
-        self.doCmd( localVar )           
+        self.doCmd( localVar )     
+
+    def configZ( self, homeSpeed, gap, gapSpeed ):
+        localVar = {
+            "command": "config",
+            "item":"gap",
+            "gap": gap,
+            "gapspeed": gapSpeed,
+            "zhomespeed": homeSpeed
+        }        
+        self.doCmd( localVar )                 
 
     def status( self ):
         query_device_status = {

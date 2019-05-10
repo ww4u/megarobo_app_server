@@ -1,3 +1,4 @@
+
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -46,3 +47,4 @@ int main(int argc, char *argv[])
 
     return ret;
 }
+

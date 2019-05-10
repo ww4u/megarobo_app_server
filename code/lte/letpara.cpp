@@ -24,7 +24,7 @@ void LetPara::rst()
     mOz = 0;
 
     mW = 250;
-    mH = 320;
+    mH = 300;
     mZ = 50;
 
     mdW = 10;
@@ -35,6 +35,7 @@ void LetPara::rst()
 
     mZGap = -1;
     mZGapSpeed = 10;
+    mZHomeSpeed = 10;
 }
 
 #define assign( a, v )  if ( _r_assign) { v = a; }\
@@ -61,6 +62,7 @@ int LetPara::saveConfig()
 
     assign( var.gap, mZGap );
     assign( var.gapspeed, mZGapSpeed );
+    assign( var.zhomespeed, mZHomeSpeed );
 
     QJsonObject obj;
     json_obj3s( x,y,z );
@@ -128,7 +130,7 @@ int LetPara::loadConfig()
 
         deload_double( rv );
 
-        deload_double2s( gap, gapspeed );
+        deload_double3s( gap, gapspeed, zhomespeed );
     }
     else
     { return -1; }
@@ -151,6 +153,7 @@ int LetPara::loadConfig()
 
     assign( var.gap, mZGap );
     assign( var.gapspeed, mZGapSpeed );
+    assign( var.zhomespeed, mZHomeSpeed );
 
     return 0;
 }

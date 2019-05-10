@@ -164,15 +164,13 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
 
     //! home
     {
-        _pLocalServer->mZAxes.configZero( 10, //var.velocity,
+        _pLocalServer->mZAxes.configZero( _pLocalServer->mZHomeSpeed,
                                           _pLocalServer->mZGap,
                                           _pLocalServer->mZGapSpeed );
 
         localRet = _pLocalServer->mZAxes.zero();
         if ( localRet != 0 )
         { return localRet; }
-
-//        _pLocalServer->mZAxes.move( wave_table, 0, 1, 0 );
 
         localRet = mrgRobotGoHome( local_vi(),
                                    robot_handle(),
@@ -322,24 +320,33 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
 
     _try_deload_xx( obj, n, Int, 1 );
 
-    double dist = distance( 0,0,0, var.x, var.y, var.z );
+    double distxy = distance( 0,0,0, var.x, var.y, 0 );
 
-    float t = motionTime( dist, var.velocity );
-    int tmoms = motionTimeoutms( dist, var.velocity );
+    float t = motionTime( distxy, var.velocity );
+    int tmoms = motionTimeoutms( distxy, var.velocity );
 
     int i = 0;
     do
     {
         begin_pend()
 //        try{
-            localRet = mrgRobotRelMove( local_vi(),
-                                 robot_handle(),
-                                 wave_table,
-                                 var.x, var.y, 0,
-                                 t,
-                                 tmoms );
-            if ( localRet != 0 )
-            { return localRet; }
+            if ( distxy > 0 )
+            {
+                localRet = mrgRobotRelMove( local_vi(),
+                                     robot_handle(),
+                                     wave_table,
+                                     var.x, var.y, 0,
+                                     t,
+                                     tmoms );
+                if ( localRet != 0 )
+                { return localRet; }
+            }
+            else if ( var.z != 0 )
+            {
+                _pLocalServer->mZAxes.step( wave_table, var.z, var.velocity );
+            }
+            else
+            {}
 
             if ( (++i) < var.n )
             {}
@@ -450,10 +457,12 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
                                         );
                 if ( localRet != 0 )
                 { return localRet; }
+                pend_for_next();
             }
         }
 
         //! home
+        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -549,11 +558,12 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
                 if ( localRet != 0 )
                 { return localRet; }
 
-                logDbg()<<cx+dx<<cy<<cz;
+                pend_for_next();
             }
         }
 
         //! home
+        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -648,6 +658,7 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
         }
 
         //! home
+        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -741,6 +752,7 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
            pend_for_next();
         }
         //! home
+        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -876,7 +888,8 @@ int Let_Service::on_q_status( QJsonDocument &doc )
                           states );
         if ( localRet != 0 )
         {}
-        else if ( QString( states ).toLower() == "idle" )
+        else if ( QString( states ).toLower() == "idle"
+                  || QString( states ).toLower() == "stop" )
         {
             var.status = "stoped";
         }
@@ -1033,10 +1046,11 @@ int Let_Service::on_config_gap( QJsonDocument &doc )
 {
     pre_def( IntfConfig );
 
-    deload_double2s( gap, gapspeed );
+    deload_double3s( gap, gapspeed, zhomespeed );
 
     _pLocalServer->mZGap = var.gap;
     _pLocalServer->mZGapSpeed = var.gapspeed;
+    _pLocalServer->mZHomeSpeed = var.zhomespeed;
 
     return 0;
 }
@@ -1061,6 +1075,7 @@ int Let_Service::on_q_config( QJsonDocument &doc )
 
     var.gap = _pLocalServer->mZGap;
     var.gapspeed = _pLocalServer->mZGapSpeed;
+    var.zhomespeed = _pLocalServer->mZHomeSpeed;
 
     json_obj( command );
     json_obj3s( x, y, z );
