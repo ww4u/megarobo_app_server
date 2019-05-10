@@ -22,7 +22,7 @@ public:
     double w, h, d;
     double dw, dh,dd;
     double rv;
-    double gap, gapspeed;
+    double gap, gapspeed, zhomespeed;
 };
 
 class IntfPose : public IntfObj, public ObjPose

@@ -100,7 +100,9 @@ int Let_Server::open()
             //! attach axes
             mZAxes.attachDevice( mVi, mDeviceHandle );
             mZAxes.attachAxes( 2 );
-            mZAxes.setInvert( true );
+            mZAxes.setInvert( false );
+//            mZAxes.setInvert( true );
+//            mZAxes.stop();
 //            mZAxes.zero();
         }
 

@@ -209,8 +209,10 @@ void MAppService::dataProc( )
         index = mRecvCache.indexOf( '#' );
         if ( index >= 0 )
         {
-            packet = mRecvCache.mid( 0, index + 1 );
-            mRecvCache.remove( 0, index + 1 );
+            mRecvMutex.lock();
+                packet = mRecvCache.mid( 0, index + 1 );
+                mRecvCache.remove( 0, index + 1 );
+            mRecvMutex.unlock();
 
             //! remove the '#'
             packet.remove( index, 1 );
@@ -498,7 +500,9 @@ void MAppService::slot_dataIn( )
     { logDbg()<<ary; }
 
     //! receive cache
-    mRecvCache.append( ary );
+    mRecvMutex.lock();
+        mRecvCache.append( ary );
+    mRecvMutex.unlock();
 
     //! register this
     m_pServer->registerService( this );

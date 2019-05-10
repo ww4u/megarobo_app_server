@@ -20,7 +20,7 @@ public:
     float mdW, mdH, mdZ;
     float mRV;
 
-    float mZGap, mZGapSpeed;
+    float mZGap, mZGapSpeed, mZHomeSpeed;
 };
 
 #endif // LETPARA_H
