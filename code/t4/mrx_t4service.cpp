@@ -163,6 +163,10 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     deload_double( z );
     deload_bool( continous );
 
+    //! \note
+    //! \todo
+    var.continous = false;
+
     //! deparse the x/y/z
     double lx, ly, lz;
     if ( var.continous )
@@ -202,17 +206,17 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     double t = dist / pLocalServer->mMaxBodySpeed / pLocalServer->localSpeedRatio();
 
     //! \note no move on
-//    if ( var.continous )
-//    {
-//        localRet = mrgRobotMoveOn( local_vi(),
-//                                   robot_handle(),
-//                                   wave_table,
-//                                   lx,
-//                                   ly,
-//                                   lz,
-//                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
-//    }
-//    else
+    if ( var.continous )
+    {
+        localRet = mrgRobotMoveOn( local_vi(),
+                                   robot_handle(),
+                                   wave_table,
+                                   lx,
+                                   ly,
+                                   lz,
+                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
+    }
+    else
     {
         localRet = mrgRobotRelMove( local_vi(),
                                     robot_handle(),
