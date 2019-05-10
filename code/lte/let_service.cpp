@@ -461,8 +461,6 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
             }
         }
 
-        //! home
-        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -563,7 +561,6 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
         }
 
         //! home
-        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -657,8 +654,6 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
             pend_for_next();
         }
 
-        //! home
-        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -749,10 +744,9 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
             if ( localRet != 0 )
             { return localRet; }
 
-           pend_for_next();
+            pend_for_next();
         }
         //! home
-        pend_for_next();
         post_on_action_home( doc );
     end_pend()
 
@@ -793,7 +787,8 @@ int Let_Service::post_on_action_slope( QJsonDocument &doc )
     float dx, dy, dz;
     dx = (var.x-cx)/slice;
     dy = (var.y-cy)/slice;
-    dz = (var.z-cz)/slice;
+//    dz = (var.z-cz)/slice;
+    dz = 0;
 
     double dist = distance( 0,0,0,
                             dx,
@@ -813,21 +808,22 @@ int Let_Service::post_on_action_slope( QJsonDocument &doc )
                                      wave_table,
                                      cx + i * dx,
                                      cy + i * dy,
-                                     cz + i * dz,
+                                     0,
                                      t,
                                      tmoms );
                 if ( localRet != 0 )
                 { return localRet; }
 
                 //! \note the zaxes
-                localRet = _pLocalServer->mZAxes.move( wave_table, cz + i * dz, var.velocity );
-                if ( localRet != 0 )
-                { return localRet; }
+//                localRet = _pLocalServer->mZAxes.move( wave_table, cz + i * dz, var.velocity );
+//                if ( localRet != 0 )
+//                { return localRet; }
 
                 pend_for_next();
             }
-
         }
+
+        post_on_action_home( doc );
     end_pend()
 
     return localRet;
@@ -1083,7 +1079,7 @@ int Let_Service::on_q_config( QJsonDocument &doc )
     json_obj3s( dw, dh, dd );
     json_obj( rv );
 
-    json_obj2s( gap, gapspeed );
+    json_obj3s( gap, gapspeed, zhomespeed );
 
     doc.setObject( obj );
 

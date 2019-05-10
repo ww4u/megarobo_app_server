@@ -31,9 +31,9 @@ void LetPara::rst()
     mdH = 10;
     mdZ = 10;
 
-    mRV = 10;
+    mRV = 300;
 
-    mZGap = -1;
+    mZGap = 1;
     mZGapSpeed = 10;
     mZHomeSpeed = 10;
 }
@@ -73,7 +73,7 @@ int LetPara::saveConfig()
 
     json_obj( rv );
 
-    json_obj2s( gap, gapspeed );
+    json_obj3s( gap, gapspeed, zhomespeed );
 
     //! save
     QJsonDocument doc( obj );
