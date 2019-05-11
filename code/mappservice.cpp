@@ -76,6 +76,8 @@ void MAppService::run()
 
     //! create the exec thread
     m_pExec = new MAppExec();
+    if ( NULL == m_pExec )
+    { return; }
     m_pExec->attachService( this );
     m_pExec->attachSocket( m_pSocket );
 
@@ -94,6 +96,7 @@ void MAppService::run()
     QThread::run();
 
     logDbg()<<QThread::currentThread()<<"end";
+    emit signal_clean( this );
 
     //! move to main thread
     moveToThread( QCoreApplication::instance()->thread() );
@@ -321,12 +324,10 @@ void MAppService::output( const QJsonDocument &doc )
     else
     { return; }
 
-    mExecMutex.lock();
-    if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
-    {
-//        m_pExec->signal_output( outAry );
-
-        mExecMutex.unlock();
+//    mExecMutex.lock();
+//    if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
+//    {
+//        mExecMutex.unlock();
 
         do
         {
@@ -340,9 +341,9 @@ void MAppService::output( const QJsonDocument &doc )
         }while( false );
 
         sysLogOut( outAry );
-    }
-    else
-    { mExecMutex.unlock(); }
+//    }
+//    else
+//    { mExecMutex.unlock(); }
 
 //    sysLogOut( mOutput );
 }
@@ -585,6 +586,7 @@ void MAppService::slot_event_exit( QByteArray ary )
 void MAppService::slot_on_socket_error( QAbstractSocket::SocketError err )
 {
     logDbg()<<err;
+    emit signal_clean( this );
 
     pre_quit();
 

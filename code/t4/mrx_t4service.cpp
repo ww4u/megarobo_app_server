@@ -482,7 +482,6 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
 
     deload_string( item );
 
-
     if ( var.item == "link_status" )
     {
         query_( on_link_status_proc_q );
@@ -554,6 +553,7 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
 {
     pre_def( Intfdevice_status );
 
+    Q_ASSERT( NULL != m_pServer );
     //! if the bg thread is running or the device is running
     if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; logDbg(); }
