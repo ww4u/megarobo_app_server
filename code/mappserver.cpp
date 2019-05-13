@@ -44,6 +44,7 @@ void MAppServer::registerService( QThread *pService )
         {}
         else
         { mServices.append( pService ); }
+        logDbg()<<mServices.size();
     mServiceMutex.unlock();
 }
 

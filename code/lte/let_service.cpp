@@ -59,7 +59,7 @@ int Let_Service::on_request( QJsonDocument &doc )
     {
         //! stop at first
         on_action_stop( doc );
-
+logDbg();
         post_call( on_action_home );
     }
     else if ( var.item == "origin" )
@@ -122,19 +122,19 @@ int Let_Service::on_request( QJsonDocument &doc )
 int Let_Service::on_action_stop( QJsonDocument &doc )
 {
     pre_def( IntfRequest );
-
+logDbg();
     //! terminate working
     m_pWorkingThread->requestInterruption();
     m_pWorkingThread->wait();
-
+logDbg();
     clearContinue();
-
+logDbg();
     localRet = _pLocalServer->mZAxes.stop();
     check_local_ret();
-
+logDbg();
     localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
     check_local_ret();
-
+logDbg();
     return 0;
 }
 int Let_Service::on_action_eStop( QJsonDocument &doc )
