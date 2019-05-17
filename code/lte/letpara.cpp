@@ -23,12 +23,12 @@ void LetPara::rst()
     mOy = 0;
     mOz = 0;
 
-    mW = 250;
-    mH = 300;
+    mW = 300;
+    mH = 350;
     mZ = 50;
 
-    mdW = 10;
-    mdH = 10;
+    mdW = 50;
+    mdH = 50;
     mdZ = 10;
 
     mRV = 300;

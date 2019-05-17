@@ -6,7 +6,12 @@
 
 Let_Server::Let_Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
 {
-    mAddr = "TCPIP0::192.168.1.54::inst0::INSTR";        //! descriptor in case sensitive
+#ifndef _RASPBERRY
+    mAddr = "TCPIP0::192.168.1.235::inst0::INSTR";        //! descriptor in case sensitive
+//    mAddr = "TCPIP0::192.168.1.226::inst0::INSTR";        //! descriptor in case sensitive
+#else
+    mAddr = "TCPIP0::127.0.0.1::inst0::INSTR";
+#endif
 }
 
 int Let_Server::start()
@@ -100,7 +105,7 @@ int Let_Server::open()
             //! attach axes
             mZAxes.attachDevice( mVi, mDeviceHandle );
             mZAxes.attachAxes( 2 );
-            mZAxes.setInvert( false );
+            mZAxes.setInvert( true );
 //            mZAxes.setInvert( true );
 //            mZAxes.stop();
 //            mZAxes.zero();

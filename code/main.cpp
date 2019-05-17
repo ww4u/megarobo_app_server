@@ -29,9 +29,9 @@ int main(int argc, char *argv[])
     int ret;
 
     //! servers
-    MRX_T4Server server( 50000 );
+//    MRX_T4Server server( 50000 );
 
-//    Let_Server server( 2345 );
+    Let_Server server( 2345 );
     ret = server.start();
     logDbg()<<ret;
     do

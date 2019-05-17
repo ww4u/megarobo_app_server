@@ -84,10 +84,27 @@ class MegaRobo():
             tmo -= 1
             time.sleep(  1 )
         raise Exception("time out")            
-        return False     
+        return False  
 
-    def waitIdle( self, tmo = 120 ):
-        return self.waitX( "stoped" )               
+    def waitX2( self, sth1, sth2, tmo = 120 ):
+        while ( tmo > 0 ):            
+            stat = self.status( )
+            # print( stat )
+            if( sth1 in stat or sth2 in stat ):
+                return (True, stat )
+            else:
+                pass
+            tmo -= 1
+            time.sleep(  1 )
+        raise Exception("time out")            
+        return (False,None)      
+
+    def waitIdle( self ):
+        return self.waitX( "stoped" )
+
+    def waitFor( self, sth1, sth2="stoped", tmo = 120 ):
+        return self.waitX2( sth1, sth2 )  
+
 
 class RoboT4( MegaRobo ):
     def __init__( self, ip="127.0.0.1", port=50000 ):
@@ -175,6 +192,14 @@ class LetRobo( MegaRobo ):
             "velocity": v
         }
         self.doCmd( localVar )
+
+    def request_homez( self, v = 10 ):
+        localVar = {
+            "command": "request",
+            "item": "homez",
+            "velocity": v
+        }
+        self.doCmd( localVar )        
 
     def request_to( self, x, y, z, v = 10  ):
         localVar = {
@@ -324,24 +349,35 @@ def let_test_rst( robo ):
 
 def let_test_home( robo ):
 
-    def moveProc():
-        robo.request_to( 3,5,2 )
-        robo.waitIdle()
+    robo.request_homez( 20 )
+    robo.waitIdle()
+
+    robo.request_home( 20 )
+    robo.waitIdle()
+
+    return
+
+    # def moveProc():
+    #     robo.request_to( 3,5,0 )
+    #     robo.waitIdle()
 
     def localHome( speed ):
+        robo.request_homez( speed )
+        robo.waitIdle()
+
         robo.request_home( speed )
         robo.waitIdle()
 
-    moveProc()
+    # moveProc()
 
-    # home1
-    # check pos
-    let_check_pos( robo, (0,0,0), api=localHome, para=( 10 ) )
+    # # home1
+    # # check pos
+    # let_check_pos( robo, (0,0,0), api=localHome, para=( 10 ) )
 
-    let_check_pos( robo, (3,5,1), api = moveProc )
+    # let_check_pos( robo, (3,5,0), api = moveProc )
 
-    # home2
-    let_check_pos( robo, (0,0,0), api=localHome, para=( 1 ) )
+    # # home2
+    # let_check_pos( robo, (0,0,0), api=localHome, para=( 1 ) )
 
 def let_test_origin( robo ):
 
@@ -412,6 +448,19 @@ def let_test_stepn( robo ):
     robo.request( "estop" )
     robo.waitIdle()
 
+def let_test_trace_auto( robo, type="zigzagx" ):
+
+    let_test_rst( robo )
+    robo.request_traceX( type )    
+
+    while( True ):
+        ret = robo.waitFor( "pending" )
+        print( ret )
+        if ( ret[0] and "pending" in ret[1] ):
+            robo.request_continue()
+        else:
+            break
+
 def let_test_zigzag_x( robo ):
     let_test_rst( robo )
     robo.request_traceX( type="zigzagx" )    
@@ -448,9 +497,9 @@ def let_test_slope(robo ):
     let_check_pos( robo, (40,60,0) )
 
 def testMain( robo ):
-    let_test_rst( robo )
-
-    # let_test_home( robo ) 
+    # let_test_rst( robo )
+    # for i in range( 100 ):
+    #     let_test_home( robo ) 
 
     # let_test_to( robo )
 
@@ -465,17 +514,23 @@ def testMain( robo ):
 
     # let_test_slope( robo )
 
+    for i in range( 100 ):
+        let_test_trace_auto( robo, type='zigzagx' )
+        let_test_trace_auto( robo, type='zigzagy' )
+        let_test_trace_auto( robo, type='snakex' )
+        let_test_trace_auto( robo, type='snakey' )
+
     print( robo.pose() )
 
 if __name__=="__main__":
 # def roboFlow():
 
-    robo = LetRobo( )
-    print( robo.pose() )
+    # robo = LetRobo( ip="192.168.1.60")
+    # print( robo.pose() )
 
-    testMain( robo )
+    # testMain( robo )
 
-    exit( 0 )
+    # exit( 0 )
 
     # let_test_home( robo )
 
@@ -491,9 +546,9 @@ if __name__=="__main__":
     # robo.config_rv( 10 )
     # robo.config_orig( 10,20,5 )
 
-    print( robo.query( "config" ) )
-    print( robo.query( "pose" ) )
-    print( robo.query( "status" ) )
+    # print( robo.query( "config" ) )
+    # print( robo.query( "pose" ) )
+    # print( robo.query( "status" ) )
 
     # config
 
@@ -506,10 +561,10 @@ if __name__=="__main__":
     # robo.request_traceX( type = "slope", v = 10, x = 50, y=50, z=0 )
     # robo.waitIdle( )
 
-    robo.request_to( 3, 5, 6 )
-    # robo.request( "stop" )
-    robo.waitIdle( )
-    print( robo.query( "pose") )
+    # robo.request_to( 3, 5, 6 )
+    # # robo.request( "stop" )
+    # robo.waitIdle( )
+    # print( robo.query( "pose") )
 
     # robo.request_step(10,0,0, 5 )
 
@@ -527,9 +582,12 @@ if __name__=="__main__":
     # print( robo.query_x( "config") )
     # print( robo.query_x( "status") )
 
-    # robo = RoboT4( ip="127.0.0.1")
-    # print( robo.query( "link_status" ) )
-    time.sleep( 10 )
+    for i in range( 1000000 ):
+        robo = RoboT4( ip="192.168.1.234")
+        # print( i )
+        print( i, robo.query( "link_status" ) )
+        # print( robo.query( "device_status" ) )
+        # time.sleep( 1 )
     exit( 0 )
 
     # for i in range( 100000 ):
