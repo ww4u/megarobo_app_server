@@ -9,6 +9,7 @@ CONFIG -= app_bundle
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += QT_NO_DEBUG_OUTPUT
 
 # \note the VERSION variable is only valid for WINDOWS
 #VERSION = 0.0.0.0

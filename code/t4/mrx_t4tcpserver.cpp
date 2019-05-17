@@ -14,6 +14,9 @@ void MRX_T4TcpServer::incomingConnection(qintptr socketDescriptor)
     MAppService *thread = new MRX_T4Service(socketDescriptor, 0 );
     if ( NULL == thread )
     { logDbg(); return; }
+
+    connect( thread, SIGNAL(finished()), thread, SLOT(slot_deleteLater()));
+
     thread->moveToThread( thread );
 
     Q_ASSERT( NULL != m_pServer );
@@ -25,11 +28,12 @@ void MRX_T4TcpServer::incomingConnection(qintptr socketDescriptor)
     //! server connection
     connect( thread, SIGNAL(signal_clean(QThread*)),
              pLocalServer, SLOT(slot_clean(QThread*)));
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+//    connect( thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
-    logDbg()<<pLocalServer->mTickTmo;
+    logDbg_Thread()<<pLocalServer->mTickTmo<<socketDescriptor;
 
     thread->start();
+
 }
 
 

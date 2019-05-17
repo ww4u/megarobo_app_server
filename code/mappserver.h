@@ -49,6 +49,7 @@ protected:
     QList< MTcpServer *> mTcpServers;
     QList< quint16 > mPorts;
 
+    QMutex mWorkingMutex;
     QList<WorkingThread *> mWorkings;
 
     QMutex mServiceMutex;

@@ -23,8 +23,6 @@ protected:
 public:
     bool start( quint16 port );
 
-protected Q_SLOTS:
-
 protected:
     MAppServer *m_pServer;
 

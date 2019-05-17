@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QDebug>
 #include <QThread>
+#include <QAbstractSocket>
 
 #include "mydebug.h"
 #include "./t4/mrx_t4server.h"
@@ -23,9 +24,14 @@ int main(int argc, char *argv[])
 
     sysSetArg( argc, argv );
 
+    qRegisterMetaType<QAbstractSocket::SocketError>( "QAbstractSocket::SocketError" );
+
     //! \note for version
     qInfo()<<"Verison:"<<_version_;
     qInfo()<<"Build:"<<__DATE__<<__TIME__;
+
+    logDbg_Thread();
+
     int ret;
 
     //! servers

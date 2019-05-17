@@ -3,12 +3,15 @@
 
 
 #include <QDebug>
+//#define logDbg()	QT_NO_QDEBUG_MACRO()<<__FUNCTION__<<__FILE__<<__LINE__
+//#define logWarning()    QT_NO_QDEBUG_MACRO()<<"!!!Warning:"<<__FUNCTION__<<__FILE__<<__LINE__
+//#define logError()      QT_NO_QDEBUG_MACRO()<<"!!!Error:"<<__FUNCTION__<<__FILE__<<__LINE__
 
 #define logDbg()	qDebug()<<__FUNCTION__<<__FILE__<<__LINE__
 #define logWarning()    qDebug()<<"!!!Warning:"<<__FUNCTION__<<__FILE__<<__LINE__
 #define logError()      qDebug()<<"!!!Error:"<<__FUNCTION__<<__FILE__<<__LINE__
 
-#define logDbg_Thread() logDbg();\
+#define logDbg_Thread() \
                         logDbg()<<QThread::currentThreadId()<<QThread::currentThread()
 
 //#define logDbg()	QT_NO_QDEBUG_MACRO()<<__FUNCTION__<<__FILE__<<__LINE__

@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QDebug>
+#include <QMutex>
 static SysPara _sys_para;
 
 SysPara::SysPara()
@@ -100,32 +101,38 @@ bool sysHasArg( const QString &arg )
 
 void sysLogIn( const QString &input )
 {
+    static QMutex _logInMutex;
     if ( sysHasArg("-loginput") )
     {}
     else
     { return; }
 
-    if ( NULL == _sys_para.m_pInputFile )
-    {
-        _sys_para.m_pInputFile = _sys_para.open( "login.txt" );
-    }
+    _logInMutex.lock();
+        if ( NULL == _sys_para.m_pInputFile )
+        {
+            _sys_para.m_pInputFile = _sys_para.open( "login.txt" );
+        }
 
-    //! log it
-    _sys_para.logFile( _sys_para.m_pInputFile, input);
+        //! log it
+        _sys_para.logFile( _sys_para.m_pInputFile, input);
+    _logInMutex.unlock();
 }
 
 void sysLogOut( const QString &input )
 {
+    static QMutex _logOutMutex;
     if ( sysHasArg("-logoutput") )
     {}
     else
     { return; }
 
-    if ( NULL == _sys_para.m_pOutputFile )
-    {
-        _sys_para.m_pOutputFile = _sys_para.open( "logout.txt" );
-    }
+    _logOutMutex.lock();
+        if ( NULL == _sys_para.m_pOutputFile )
+        {
+            _sys_para.m_pOutputFile = _sys_para.open( "logout.txt" );
+        }
 
-    //! log it
-    _sys_para.logFile( _sys_para.m_pOutputFile, input);
+        //! log it
+        _sys_para.logFile( _sys_para.m_pOutputFile, input);
+    _logOutMutex.unlock();
 }

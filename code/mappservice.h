@@ -70,6 +70,7 @@ public:
 
     void setPara( QVariant v1, QVariant v2=0, QVariant v3=0 );
     void setBufferData( const QByteArray &ary );
+    QByteArray bufferData();
 
 public:
     quint64 mTs;
@@ -138,10 +139,10 @@ protected:
 protected:
     qintptr mPtr;
 
-    QMutex mSendMutex;
+//    QMutex mSendMutex;
     QTcpSocket *m_pSocket;
 
-    QMutex mRecvMutex;
+//    QMutex mRecvMutex;
     QByteArray mRecvCache;
     QByteArray mOutput;
 
@@ -164,6 +165,8 @@ signals:
     void signal_clean( QThread* );
 
 public slots:
+    void slot_deleteLater();
+
     void slot_finished();
 
     void slot_dataIn( );

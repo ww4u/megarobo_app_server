@@ -51,12 +51,16 @@ void MAppServer::registerService( QThread *pService )
 void MAppServer::connectWorking( WorkingThread *pWorking )
 {
     Q_ASSERT( NULL != pWorking );
-    mWorkings.append( pWorking );
+    mWorkingMutex.lock();
+        mWorkings.append( pWorking );
+    mWorkingMutex.unlock();
 }
 void MAppServer::disconnectWorking( WorkingThread *pWorking )
 {
     Q_ASSERT( NULL != pWorking );
-    mWorkings.removeAll( pWorking );
+    mWorkingMutex.lock();
+        mWorkings.removeAll( pWorking );
+    mWorkingMutex.unlock();
 }
 
 void MAppServer::slot_clean( QThread * pThread )

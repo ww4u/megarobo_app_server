@@ -582,10 +582,12 @@ if __name__=="__main__":
     # print( robo.query_x( "config") )
     # print( robo.query_x( "status") )
 
-    for i in range( 100000 ):
+    for i in range( 1000000 ):
         # robo = RoboT4( ip="192.168.1.234")
         robo = RoboT4( ip="127.0.0.1")
         # print( i )
+        # robo.query( "link_status" )
+
         print( i, robo.query( "link_status" ) )
         # print( robo.query( "device_status" ) )
         # time.sleep( 1 )
