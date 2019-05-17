@@ -262,6 +262,11 @@ int Let_Service::post_on_action_to( QJsonDocument &doc )
     deload_double( y );
     deload_double( z );
 
+    if ( isInRegion( var.x, var.y, var.z ) )
+    {}
+    else
+    { return -1; }
+
     toWorld( var.x, var.y, var.z );
 
     float t;
@@ -324,6 +329,26 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
 
     _try_deload_xx( obj, n, Int, 1 );
 
+    float cx, cy, cz;
+    localRet = mrgGetRobotCurrentPosition( local_vi(),
+                                           robot_handle(),
+                                           &cx, &cy, &cz );
+    if ( localRet != 0 )
+    { return localRet; }
+
+    toTcp( cx, cy, cz );
+
+    //! check the range
+    float dstx, dsty, dstz;
+    dstx = cx + var.x;
+    dsty = cy + var.y;
+    dstz = cy + var.z;
+
+    if ( isInRegion( dstx, dsty, dstz ) )
+    {}
+    else
+    { return -1; }
+
     stepToWorld( var.x, var.y, var.z );
 
     double distxy = distance( 0,0,0, var.x, var.y, 0 );
@@ -383,11 +408,16 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+    float dirx, diry, dirz;
 
-    stepToWorld( var.x, var.y, var.z );
+    dirx = var.x;
+    diry = var.y;
+    dirz = var.z;
 
-    dx = var.x * _pLocalServer->mdH;
-    dy = var.y * _pLocalServer->mdW;
+    stepToWorld( dirx, diry, dirz );
+
+    dx = var.x * _pLocalServer->mdH * dirx;
+    dy = var.y * _pLocalServer->mdW * diry;
     dz = 0;
 
     int n, m;
@@ -399,25 +429,37 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
     if ( localRet != 0 )
     { return localRet; }
 
+    //! view x, y
+    float cvx, cvy, cvz;
+    cvx = cx;
+    cvy = cy;
+    cvz = cz;
+    toTcp( cvx, cvy, cvz );
+
+    if ( isInRegion( cvx, cvy, cvz ) )
+    {}
+    else
+    { return -1; }
+
     //! expect the n && m
     if ( var.x > 0 )
     {
-        n = align_count( _pLocalServer->mH - cx, _pLocalServer->mdH );
+        n = align_count( _pLocalServer->mH - cvx, _pLocalServer->mdH );
     }
     else if ( var.x < 0 )
     {
-        n = align_count( cx, _pLocalServer->mdH );
+        n = align_count( cvx, _pLocalServer->mdH );
     }
     else
     { return -1; }
 
     if ( var.y > 0 )
     {
-        m = align_count( _pLocalServer->mW - cy, _pLocalServer->mdW );
+        m = align_count( _pLocalServer->mW - cvy, _pLocalServer->mdW );
     }
     else if ( var.y < 0 )
     {
-        m = align_count( cy, _pLocalServer->mdW );
+        m = align_count( cvy, _pLocalServer->mdW );
     }
     else
     { return -1; }
@@ -484,11 +526,16 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+    float dirx, diry, dirz;
 
-    stepToWorld( var.x, var.y, var.z );
+    dirx = var.x;
+    diry = var.y;
+    dirz = var.z;
 
-    dx = var.x * _pLocalServer->mdH;
-    dy = var.y * _pLocalServer->mdW;
+    stepToWorld( dirx, diry, dirz );
+
+    dx = var.x * _pLocalServer->mdH * dirx;
+    dy = var.y * _pLocalServer->mdW * diry;
     dz = 0;
 
     int n, m;
@@ -500,25 +547,37 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
     if ( localRet != 0 )
     { return localRet; }
 
+    //! view x, y
+    float cvx, cvy, cvz;
+    cvx = cx;
+    cvy = cy;
+    cvz = cz;
+    toTcp( cvx, cvy, cvz );
+
+    if ( isInRegion( cvx, cvy, cvz ) )
+    {}
+    else
+    { return -1; }
+
     //! expect the n && m
     if ( var.x > 0 )
     {
-        n = align_count( _pLocalServer->mH - cx, _pLocalServer->mdH );
+        n = align_count( _pLocalServer->mH - cvx, _pLocalServer->mdH );
     }
     else if ( var.x < 0 )
     {
-        n = align_count( cx, _pLocalServer->mdH );
+        n = align_count( cvx, _pLocalServer->mdH );
     }
     else
     { return -1; }
 
     if ( var.y > 0 )
     {
-        m = align_count( _pLocalServer->mW - cy, _pLocalServer->mdW );
+        m = align_count( _pLocalServer->mW - cvy, _pLocalServer->mdW );
     }
     else if ( var.y < 0 )
     {
-        m = align_count( cy, _pLocalServer->mdW );
+        m = align_count( cvy, _pLocalServer->mdW );
     }
     else
     { return -1; }
@@ -587,11 +646,15 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+    float dirx, diry, dirz;
 
-    stepToWorld( var.x, var.y, var.z );
+    dirx = var.x;
+    diry = var.y;
+    dirz = var.z;
 
-    dx = var.x * _pLocalServer->mdH;
-    dy = var.y * _pLocalServer->mdW;
+    stepToWorld( dirx, diry, dirz );
+
+    dx = var.x * _pLocalServer->mdH * dirx;
     dz = 0;
 
     int n, m;
@@ -602,6 +665,14 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
                                            &cx, &cy, &cz );
     if ( localRet != 0 )
     { return localRet; }
+
+    //! view x, y
+    toTcp( cx, cy, cz );
+
+    if ( isInRegion( cx, cy, cz ) )
+    {}
+    else
+    { return -1; }
 
     //! expect the n && m
     if ( var.x > 0 )
@@ -627,6 +698,8 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
     }
     else
     { return -1; }
+
+    dy *= _pLocalServer->mDiry;
 
     double dist = distance( 0,0,0,
                             dx,
@@ -682,11 +755,16 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+    float dirx, diry, dirz;
 
-    stepToWorld( var.x, var.y, var.z );
+    dirx = var.x;
+    diry = var.y;
+    dirz = var.z;
 
-    dx = var.x * _pLocalServer->mdH;
-    dy = var.y * _pLocalServer->mdW;
+    stepToWorld( dirx, diry, dirz );
+
+//    dx = var.x * _pLocalServer->mdH * dirx;
+    dy = var.y * _pLocalServer->mdW * diry;
     dz = 0;
 
     int n, m;
@@ -697,6 +775,14 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
                                            &cx, &cy, &cz );
     if ( localRet != 0 )
     { return localRet; }
+
+    //! view x, y
+    toTcp( cx, cy, cz );
+
+    if ( isInRegion( cx, cy, cz ) )
+    {}
+    else
+    { return -1; }
 
     //! expect the n && m
     if ( var.x > 0 )
@@ -711,6 +797,8 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
     }
     else
     { return -1; }
+
+    dx *= _pLocalServer->mDirx;
 
     if ( var.y > 0 )
     {
@@ -785,13 +873,24 @@ int Let_Service::post_on_action_slope( QJsonDocument &doc )
     if ( localRet != 0 )
     { return localRet; }
 
+    float cvx, cvy, cvz;
+    cvx = cx;
+    cvy = cy;
+    cvz = cz;
+
+    //! view x, y
+    toTcp( cvx, cvy, cvz );
+
+    if ( isInRegion( cvx, cvy, cvz ) && isInRegion( var.x, var.y, var.z ) )
+    {}
+    else
+    { return -1; }
+
     cz = _pLocalServer->mZAxes.value();
 
-    toWorld( var.x, var.y, var.z );
-
     //! expect the n && m
-    n = align_count( var.x - cx, _pLocalServer->mdH );
-    m = align_count( var.y - cy, _pLocalServer->mdW );
+    n = align_count( var.x - cvx, _pLocalServer->mdH );
+    m = align_count( var.y - cvy, _pLocalServer->mdW );
 
     //! select the min
     int slice = qMin( qAbs(n), qAbs(m) );
@@ -799,8 +898,8 @@ int Let_Service::post_on_action_slope( QJsonDocument &doc )
     { return -1; }
 
     float dx, dy, dz;
-    dx = (var.x-cx)/slice;
-    dy = (var.y-cy)/slice;
+    dx = (var.x-cvx)/slice * _pLocalServer->mDirx;
+    dy = (var.y-cvy)/slice * _pLocalServer->mDiry;
 //    dz = (var.z-cz)/slice;
     dz = 0;
 
@@ -1204,4 +1303,22 @@ void Let_Service::stepToWorld( double &x, double &y, double &z )
 
     x = x * pLocalServer->mDirx;
     y = y * pLocalServer->mDiry;
+}
+
+#define region_error 0.5
+#define more_than( v, x )   ( v > (x + region_error ) )
+#define less_than( v, x )   ( v < (x - region_error ) )
+bool Let_Service::isInRegion( float x, float y, float z )
+{
+    Q_ASSERT( NULL != m_pServer );
+    api_server *pLocalServer = (api_server*)m_pServer;
+
+    if ( less_than( x, 0 ) || less_than( y, 0 ) )
+    { return false; }
+    else if ( more_than( x, pLocalServer->mH ) || more_than(y, pLocalServer->mW ) )
+    { return false; }
+    else
+    {}
+
+    return true;
 }
