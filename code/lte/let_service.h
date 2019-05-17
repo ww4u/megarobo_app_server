@@ -61,6 +61,8 @@ protected:
 
     void stepToWorld( float &x, float &y, float &z );
     void stepToWorld( double &x, double &y, double &z );
+
+    bool isInRegion( float x, float y, float z );
 };
 
 #endif // LET_SERVICE_H
