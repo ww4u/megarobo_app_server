@@ -23,6 +23,9 @@ void LetPara::rst()
     mOy = 0;
     mOz = 0;
 
+    mDirx = -1;
+    mDiry = -1;
+
     mW = 300;
     mH = 350;
     mZ = 50;
@@ -50,6 +53,9 @@ int LetPara::saveConfig()
     assign( var.y, mOy );
     assign( var.z, mOz );
 
+    assign( var.dirx, mDirx );
+    assign( var.diry, mDiry );
+
     assign( var.w, mW );
     assign( var.h, mH );
     assign( var.d, mZ );
@@ -66,6 +72,8 @@ int LetPara::saveConfig()
 
     QJsonObject obj;
     json_obj3s( x,y,z );
+
+    json_obj2s( dirx, diry );
 
     json_obj3s( w, h, d );
 
@@ -124,6 +132,8 @@ int LetPara::loadConfig()
         obj = doc.object();  
         deload_double3s( x,y,z );
 
+        deload_int2s( dirx, diry );
+
         deload_double3s( w, h, d );
 
         deload_double3s( dw, dh, dd );
@@ -140,6 +150,9 @@ int LetPara::loadConfig()
     assign( var.x, mOx );
     assign( var.y, mOy );
     assign( var.z, mOz );
+
+    assign( var.dirx, mDirx );
+    assign( var.diry, mDiry );
 
     assign( var.w, mW );
     assign( var.h, mH );

@@ -35,6 +35,10 @@
 
 
 #define deload_string( item )   _deload_string( obj, item )
+
+#define deload_int2s( item1, item2 )      _deload_int( obj, item1 )\
+                                            _deload_int( obj, item2 )
+
 #define deload_int( item )      _deload_int( obj, item )
 #define deload_bool( item )     _deload_bool( obj, item )
 

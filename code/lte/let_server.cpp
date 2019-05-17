@@ -107,8 +107,6 @@ int Let_Server::open()
             mZAxes.attachAxes( 2 );
 //            mZAxes.setInvert( false );
             mZAxes.setInvert( true );
-//            mZAxes.stop();
-//            mZAxes.zero();
         }
 
     }while( 0 );

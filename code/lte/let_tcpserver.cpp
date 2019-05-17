@@ -14,13 +14,14 @@ void Let_TcpServer::incomingConnection(qintptr socketDescriptor)
 {
     //! self thread
     MAppService *thread = new Let_Service(socketDescriptor, 0 );
+    if ( NULL == thread )
+    { return; }
     thread->moveToThread( thread );
 
     Q_ASSERT( NULL != m_pServer );
     thread->attachServer( m_pServer );
 
     Let_Server *pLocalServer = (Let_Server*)m_pServer;
-//    thread->setTimeout( pLocalServer->mTickTmo );
 
     //! server connection
     connect( thread, SIGNAL(signal_clean(QThread*)),

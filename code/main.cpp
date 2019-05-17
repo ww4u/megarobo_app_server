@@ -25,13 +25,13 @@ int main(int argc, char *argv[])
 
     //! \note for version
     qInfo()<<"Verison:"<<_version_;
-
+    qInfo()<<"Build:"<<__DATE__<<__TIME__;
     int ret;
 
     //! servers
-//    MRX_T4Server server( 50000 );
+    MRX_T4Server server( 50000 );
 
-    Let_Server server( 2345 );
+//    Let_Server server( 2345 );
     ret = server.start();
     logDbg()<<ret;
     do

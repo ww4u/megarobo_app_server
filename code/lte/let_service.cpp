@@ -59,8 +59,12 @@ int Let_Service::on_request( QJsonDocument &doc )
     {
         //! stop at first
         on_action_stop( doc );
-logDbg();
         post_call( on_action_home );
+    }
+    else if ( var.item == "homez" )
+    {
+        on_action_stop( doc );
+        post_call( on_action_homez );
     }
     else if ( var.item == "origin" )
     {
@@ -164,14 +168,6 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
 
     //! home
     {
-        _pLocalServer->mZAxes.configZero( _pLocalServer->mZHomeSpeed,
-                                          _pLocalServer->mZGap,
-                                          _pLocalServer->mZGapSpeed );
-
-        localRet = _pLocalServer->mZAxes.zero();
-        if ( localRet != 0 )
-        { return localRet; }
-
         localRet = mrgRobotGoHome( local_vi(),
                                    robot_handle(),
                                    1000*1000 / qAbs( var.velocity ) + 120000 );
@@ -179,14 +175,8 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
         { return localRet; }
     }
 
-    //! to ox, oy, oz
+    //! to ox, oy
     {
-        localRet = _pLocalServer->mZAxes.move( wave_table,
-                                               _pLocalServer->mOz,
-                                               qAbs( var.velocity ),
-                                               0 );
-        if ( localRet != 0 ){ return localRet; }
-
         float t, dist;
         int tmo;
         localRet = guessT_tmo( _pLocalServer->mOx, _pLocalServer->mOy, 0,
@@ -196,7 +186,7 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
         if ( dist < FLT_EPSILON )
         { return 0; }
 
-        localRet = mrgRobotMove( local_vi(),
+        localRet = mrgRobotRelMove( local_vi(),
                                  robot_handle(),
                                  wave_table,
                                  _pLocalServer->mOx,
@@ -205,6 +195,26 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
                                  t, tmo
                                  );
         if ( localRet != 0 ){ return localRet; }
+    }
+
+    return localRet;
+}
+
+int Let_Service::post_on_action_homez( QJsonDocument &doc )
+{
+    pre_def( IntfRequest );
+
+    deload_double( velocity );
+
+    //! home
+    {
+        _pLocalServer->mZAxes.configZero( var.velocity,
+                                          _pLocalServer->mZGap,
+                                          _pLocalServer->mZGapSpeed );
+
+        localRet = _pLocalServer->mZAxes.zero();
+        if ( localRet != 0 )
+        { return localRet; }
     }
 
     return localRet;
@@ -234,16 +244,10 @@ int Let_Service::post_on_action_origin( QJsonDocument &doc )
                              tmo );
     check_local_ret();
 
-    //! z
-    localRet = _pLocalServer->mZAxes.move( wave_table,
-                                           var.z,
-                                           var.velocity );
-    check_local_ret();
-
     //! config origin
     _pLocalServer->mOx = var.x;
     _pLocalServer->mOy = var.y;
-    _pLocalServer->mOz = var.z;
+//    _pLocalServer->mOz = var.z;
 
     localRet = _pLocalServer->saveConfig();
 
@@ -276,10 +280,10 @@ int Let_Service::post_on_action_to( QJsonDocument &doc )
                              tmo );
     check_local_ret();
 
-    localRet = _pLocalServer->mZAxes.move( wave_table,
-                                           var.z,
-                                           var.velocity );
-    check_local_ret();
+//    localRet = _pLocalServer->mZAxes.move( wave_table,
+//                                           var.z,
+//                                           var.velocity );
+//    check_local_ret();
 
     return localRet;
 }
@@ -319,6 +323,8 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
     deload_double( z );
 
     _try_deload_xx( obj, n, Int, 1 );
+
+    stepToWorld( var.x, var.y, var.z );
 
     double distxy = distance( 0,0,0, var.x, var.y, 0 );
 
@@ -366,7 +372,7 @@ int Let_Service::post_on_action_step( QJsonDocument &doc )
 #define delta_lt( v1, v2, er )     delta( v1, v2 ) < (er)
 
 #define resolution_error    0.5
-#define align_count( len, div ) ( ( len + resolution_error ) / div)
+#define align_count( len, div ) ( ( qAbs(len) + resolution_error ) / div)
 int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
 {
     pre_def( IntfRequest );
@@ -377,6 +383,8 @@ int Let_Service::post_on_action_zigzagX( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+
+    stepToWorld( var.x, var.y, var.z );
 
     dx = var.x * _pLocalServer->mdH;
     dy = var.y * _pLocalServer->mdW;
@@ -476,6 +484,8 @@ int Let_Service::post_on_action_zigzagY( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+
+    stepToWorld( var.x, var.y, var.z );
 
     dx = var.x * _pLocalServer->mdH;
     dy = var.y * _pLocalServer->mdW;
@@ -578,6 +588,8 @@ int Let_Service::post_on_action_snakeX( QJsonDocument &doc )
 
     float dx, dy, dz;
 
+    stepToWorld( var.x, var.y, var.z );
+
     dx = var.x * _pLocalServer->mdH;
     dy = var.y * _pLocalServer->mdW;
     dz = 0;
@@ -670,6 +682,8 @@ int Let_Service::post_on_action_snakeY( QJsonDocument &doc )
     deload_double( z );     //! +/-1 0
 
     float dx, dy, dz;
+
+    stepToWorld( var.x, var.y, var.z );
 
     dx = var.x * _pLocalServer->mdH;
     dy = var.y * _pLocalServer->mdW;
@@ -953,6 +967,8 @@ int Let_Service::on_config( QJsonDocument &doc )
     { localRet = on_config_rst( doc); }
     else if( var.item == "origin" )
     { localRet = on_config_origin( doc); }
+    else if( var.item == "dir" )
+    { localRet = on_config_dir( doc); }
     else if ( var.item == "whz" )
     { localRet = on_config_whd(doc); }
     else if ( var.item == "dwdhdz")
@@ -995,6 +1011,23 @@ int Let_Service::on_config_origin( QJsonDocument &doc )
     _pLocalServer->mOx = var.x;
     _pLocalServer->mOy = var.y;
     _pLocalServer->mOz = var.z;
+
+    return 0;
+}
+
+int Let_Service::on_config_dir( QJsonDocument &doc )
+{
+    pre_def( IntfConfig );
+
+    deload_int( dirx );
+    deload_int( diry );
+//    deload_double( z );
+
+    //! x, y, z must > 0
+
+    _pLocalServer->mDirx = var.dirx > 0 ? 1 : -1;
+    _pLocalServer->mDiry = var.diry > 0 ? 1 : -1;
+//    _pLocalServer->mOz = var.z;
 
     return 0;
 }
@@ -1059,6 +1092,9 @@ int Let_Service::on_q_config( QJsonDocument &doc )
     var.y = _pLocalServer->mOy;
     var.z = _pLocalServer->mOz;
 
+    var.dirx = pLocalServer->mDirx;
+    var.diry = pLocalServer->mDiry;
+
     var.w = _pLocalServer->mW;
     var.h = _pLocalServer->mH;
     var.d = _pLocalServer->mZ;
@@ -1075,6 +1111,7 @@ int Let_Service::on_q_config( QJsonDocument &doc )
 
     json_obj( command );
     json_obj3s( x, y, z );
+    json_obj2s( dirx,diry );
     json_obj3s( w, h, d );
     json_obj3s( dw, dh, dd );
     json_obj( rv );
@@ -1117,9 +1154,9 @@ void Let_Service::toWorld( float &x, float &y, float &z )
     Q_ASSERT( NULL != m_pServer );
     api_server *pLocalServer = (api_server*)m_pServer;
 
-    x = x + pLocalServer->mOx;
-    y = y + pLocalServer->mOy;
-    z = z + pLocalServer->mOz;
+    x = x * pLocalServer->mDirx + pLocalServer->mOx;
+    y = y * pLocalServer->mDiry + pLocalServer->mOy;
+//    z = z + pLocalServer->mOz;
 }
 
 void Let_Service::toTcp( float &x, float &y, float &z )
@@ -1127,9 +1164,9 @@ void Let_Service::toTcp( float &x, float &y, float &z )
     Q_ASSERT( NULL != m_pServer );
     api_server *pLocalServer = (api_server*)m_pServer;
 
-    x = x - pLocalServer->mOx;
-    y = y - pLocalServer->mOy;
-    z = z - pLocalServer->mOz;
+    x = (x - pLocalServer->mOx) * pLocalServer->mDirx;
+    y = (y - pLocalServer->mOy ) * pLocalServer->mDiry;
+//    z = z - pLocalServer->mOz;
 }
 
 void Let_Service::toWorld( double &x, double &y, double &z )
@@ -1137,9 +1174,9 @@ void Let_Service::toWorld( double &x, double &y, double &z )
     Q_ASSERT( NULL != m_pServer );
     api_server *pLocalServer = (api_server*)m_pServer;
 
-    x = x + pLocalServer->mOx;
-    y = y + pLocalServer->mOy;
-    z = z + pLocalServer->mOz;
+    x = x * pLocalServer->mDirx + pLocalServer->mOx;
+    y = y * pLocalServer->mDiry + pLocalServer->mOy;
+
 }
 
 void Let_Service::toTcp( double &x, double &y, double &z )
@@ -1147,7 +1184,24 @@ void Let_Service::toTcp( double &x, double &y, double &z )
     Q_ASSERT( NULL != m_pServer );
     api_server *pLocalServer = (api_server*)m_pServer;
 
-    x = x - pLocalServer->mOx;
-    y = y - pLocalServer->mOy;
-    z = z - pLocalServer->mOz;
+    x = (x - pLocalServer->mOx) * pLocalServer->mDirx;
+    y = (y - pLocalServer->mOy ) * pLocalServer->mDiry;
+//    z = z - pLocalServer->mOz;
+}
+
+void Let_Service::stepToWorld( float &x, float &y, float &z )
+{
+    Q_ASSERT( NULL != m_pServer );
+    api_server *pLocalServer = (api_server*)m_pServer;
+
+    x = x * pLocalServer->mDirx;
+    y = y * pLocalServer->mDiry;
+}
+void Let_Service::stepToWorld( double &x, double &y, double &z )
+{
+    Q_ASSERT( NULL != m_pServer );
+    api_server *pLocalServer = (api_server*)m_pServer;
+
+    x = x * pLocalServer->mDirx;
+    y = y * pLocalServer->mDiry;
 }

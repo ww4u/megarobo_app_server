@@ -16,6 +16,8 @@ public:
 
 public:
     float mOx, mOy, mOz;
+    int mDirx, mDiry;
+
     float mW, mH, mZ;
     float mdW, mdH, mdZ;
     float mRV;

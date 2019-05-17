@@ -493,8 +493,8 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
         query_( on_link_status_proc_q );
     }
     else if ( var.item == "device_status" )
-    {
-        query_( on_device_status_proc );
+    {logDbg();
+        query_( on_device_status_proc );logDbg();
     }
     else if ( var.item == "exception" )
     {
@@ -564,7 +564,7 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; logDbg(); }
     else
-    {
+    {logDbg();
         return on_device_status_raw_proc( doc );
     }
 

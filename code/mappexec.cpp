@@ -27,13 +27,21 @@ void MAppExec::run()
     QEvent *pEvent;
 
     //! proc the queue
-    while( !mEventQueue.isEmpty() )
+//    while( !mEventQueue.isEmpty() )
+    while( true )
     {
         //! break
         if ( isInterruptionRequested() )
-        { break; }
+        { logDbg();break; }
 
-        pEvent = mEventQueue.dequeue();
+        if ( mEventSema.tryAcquire( 1, 100 ) )
+        {}
+        else
+        { continue; }
+
+        mMutex.lock();
+            pEvent = mEventQueue.dequeue();
+        mMutex.unlock();
 
         Q_ASSERT( NULL != pEvent );
 
@@ -54,13 +62,15 @@ void MAppExec::postEvent( QEvent *pEvent )
 {
     mMutex.lock();
         mEventQueue.enqueue( pEvent );
+//        logDbg()<<mEventQueue.size();
+        mEventSema.release();
     mMutex.unlock();
 
     //! not running
     if ( isRunning() )
     {}
     else
-    { start(); }
+    { start();}
 }
 
 void MAppExec::signal_output( QByteArray ary )
