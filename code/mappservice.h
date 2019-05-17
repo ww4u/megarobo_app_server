@@ -69,10 +69,12 @@ public:
     MServiceEvent( int tpe );
 
     void setPara( QVariant v1, QVariant v2=0, QVariant v3=0 );
+    void setBufferData( const QByteArray &ary );
 
 public:
     quint64 mTs;
     QVariant mVar1, mVar2, mVar3;
+    QByteArray mBufData;
 };
 
 class MAppService : public QThread

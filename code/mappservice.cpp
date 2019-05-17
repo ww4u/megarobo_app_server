@@ -31,6 +31,12 @@ void MServiceEvent::setPara( QVariant v1, QVariant v2, QVariant v3 )
     mVar3 = v3;
 }
 
+void MServiceEvent::setBufferData( const QByteArray &ary )
+{
+    mTs = QDateTime::currentMSecsSinceEpoch();
+    mBufData = ary;
+}
+
 MAppService::MAppService(qintptr ptr, QObject *parent) : QThread(parent)
 {
     mPtr = ptr;
@@ -43,6 +49,8 @@ MAppService::MAppService(qintptr ptr, QObject *parent) : QThread(parent)
     mbTmo = false;
 
     mTimeout = 0;
+
+    mRecvCache.reserve( 4096 );
 
     connect( this, SIGNAL(finished()),this, SLOT(slot_finished()) );
 }
@@ -213,14 +221,19 @@ void MAppService::dataProc( )
     int index;
     do
     {
-        index = mRecvCache.indexOf( '#' );
-        if ( index >= 0 )
-        {
-            mRecvMutex.lock();
+        mRecvMutex.lock();
+            index = mRecvCache.indexOf( '#' );
+            if( index >= 0 )
+            {
                 packet = mRecvCache.mid( 0, index + 1 );
                 mRecvCache.remove( 0, index + 1 );
-            mRecvMutex.unlock();
+            }
+            else
+            {}
+        mRecvMutex.unlock();
 
+        if ( index >= 0 )
+        {
             //! remove the '#'
             packet.remove( index, 1 );
 
@@ -318,49 +331,30 @@ void MAppService::proc( QJsonDocument &doc, quint64 &ts )
 
 void MAppService::output( const QJsonDocument &doc )
 {
-    //! data length
-    QByteArray outAry = doc.toJson();
-    outAry = outAry.simplified();
-    outAry.append('\n');
+//    //! data length
+//    QByteArray outAry = doc.toJson();
+//    outAry = outAry.simplified();
+//    outAry.append('\n');
 
-    //! use the \n for seperator
-    outAry = outAry.simplified();
-    if ( outAry.length() > 0 )
-    { outAry.append("\r\n"); }  //! \note control the \r\n
-    else
-    { return; }
-
-//    mExecMutex.lock();
-//    if ( m_pExec != NULL && !m_pExec->isInterruptionRequested() )
-//    {
-//        mExecMutex.unlock();
-
-        do
-        {
-            //! ary
-//            if ( outAry.size() > 0 && m_pSocket->isOpen() && m_pSocket->isWritable() && this->isRunning() )
-//            {
-//                mSendMutex.lock();
-//                    m_pSocket->write( outAry );
-//                    m_pSocket->flush();
-//                mSendMutex.unlock();
-//            }
-
-            MServiceEvent *pEvent = new MServiceEvent( MServiceEvent::e_serv_event_output );
-            if ( NULL == pEvent )
-            { break; }
-            pEvent->setPara( outAry );
-
-            qApp->postEvent( this, pEvent, Qt::HighEventPriority );
-
-        }while( false );
-
-        sysLogOut( outAry );
-//    }
+//    //! use the \n for seperator
+//    outAry = outAry.simplified();
+//    if ( outAry.length() > 0 )
+//    { outAry.append("\r\n"); }  //! \note control the \r\n
 //    else
-//    { mExecMutex.unlock(); }
+//    { return; }
 
-//    sysLogOut( mOutput );
+    do
+    {
+        MServiceEvent *pEvent = new MServiceEvent( MServiceEvent::e_serv_event_output );
+        if ( NULL == pEvent )
+        { break; }
+//        pEvent->setBufferData( outAry );
+//        pEvent->setPara( outAry );
+
+        qApp->postEvent( this, pEvent );
+
+//        sysLogOut( outAry );
+    }while( false );
 }
 
 void MAppService::resetTimeout()
@@ -469,16 +463,16 @@ void MAppService::on_event_output( QEvent *pEvent )
     { return;  }
 
     //! ary
-    QByteArray ary = pServEvent->mVar1.toByteArray();
-
-    if ( ary.size() > 0 && m_pSocket->isOpen() && m_pSocket->isWritable() )
-    {//logDbg_Thread()<<ary;
+//    QByteArray ary = pServEvent->mVar1.toByteArray();
+//    if ( ary.size() > 0 && m_pSocket->isOpen() && m_pSocket->isWritable() )
+    {
         mSendMutex.lock();
-            m_pSocket->write( ary );
+//            m_pSocket->write( ary );
+            m_pSocket->write("hello");
             m_pSocket->flush();
-//            QThread::msleep( 10 );
+
         mSendMutex.unlock();
-//        ary.clear();
+
     }
 }
 
