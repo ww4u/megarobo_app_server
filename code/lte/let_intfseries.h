@@ -19,6 +19,7 @@ public:
     QString item;
 
     double x, y, z;
+    int dirx, diry;
     double w, h, d;
     double dw, dh,dd;
     double rv;

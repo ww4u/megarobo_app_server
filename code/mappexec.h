@@ -33,6 +33,7 @@ protected:
 
     QMutex mMutex;
     QQueue<QEvent*> mEventQueue;
+    QSemaphore mEventSema;
 
 Q_SIGNALS:
     void signal_event_enter();

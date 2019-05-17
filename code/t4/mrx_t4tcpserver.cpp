@@ -12,6 +12,8 @@ void MRX_T4TcpServer::incomingConnection(qintptr socketDescriptor)
 {
     //! self thread
     MAppService *thread = new MRX_T4Service(socketDescriptor, 0 );
+    if ( NULL == thread )
+    { logDbg(); return; }
     thread->moveToThread( thread );
 
     Q_ASSERT( NULL != m_pServer );

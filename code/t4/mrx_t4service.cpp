@@ -125,6 +125,7 @@ int MRX_T4Service::_on_preProc( QJsonDocument &doc )
 {
     int localRet;
 
+//    QThread::msleep( 50 );
     query_(on_device_status_proc );
 
     return localRet;
@@ -410,16 +411,21 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
     else if ( var.item == "emergency_stop" )
     {
         //! \note has stoped
+
+//        ack_raw_status();
     }
     else if ( var.item == "stop" )
     {
         //! \todo normal stop
         //! \note has stoped
 //        localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
+
+//        ack_raw_status();
     }
     else if ( var.item == "package" )
     {
-        localRet = mrgSetRobotFold( local_vi(),robot_handle(),
+        localRet = mrgSetRobotFold( local_vi(),
+                                    robot_handle(),
                                0,
                                18.8,
                                -57.4,
@@ -487,8 +493,8 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
         query_( on_link_status_proc_q );
     }
     else if ( var.item == "device_status" )
-    {
-        query_( on_device_status_proc );
+    {logDbg();
+        query_( on_device_status_proc );logDbg();
     }
     else if ( var.item == "exception" )
     {
@@ -558,7 +564,7 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     if ( m_pServer->status() == MAppServer::state_working )
     { var.status = "running"; logDbg(); }
     else
-    {
+    {logDbg();
         return on_device_status_raw_proc( doc );
     }
 
@@ -583,13 +589,13 @@ int MRX_T4Service::on_device_status_raw_proc( QJsonDocument &doc )
                       wave_table,
                       states );
     if ( localRet != 0 )
-    {}
+    { logError()<<"status read fail"; }
     else if ( QString( states ).toLower() == "idle" )
     {
         var.status = "stoped";
     }
     else
-    {
+    {logDbg();
         var.status = "running";
     }
 
@@ -800,6 +806,7 @@ int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
         { return localRet; }
 
         var.collide = var.collide && ( iVal > 0 );
+
     }
 
     var.max_joint_speed = _pLocalServer->mMaxJointSpeed;
