@@ -1425,7 +1425,14 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
     deload_string( script );
 
     QString curPath = QDir::currentPath();
-    QDir::setCurrent("G:/study/py/megarobo");
+
+    //! try the path
+    QString wp = qApp->applicationDirPath() + "/execute/megarobo";
+    QDir dir( wp );
+    if ( dir.exists() )
+    { QDir::setCurrent( wp ); }
+    else
+    { QDir::setCurrent("G:/study/py/megarobo"); }
 
     QString scriptFile = "scrpt.mrl";
 
