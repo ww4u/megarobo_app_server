@@ -70,7 +70,9 @@ void MAppExec::postEvent( QEvent *pEvent )
     if ( isRunning() )
     {}
     else
-    { start();}
+    {
+        start();
+    }
 }
 
 void MAppExec::signal_output( QByteArray ary )

@@ -183,4 +183,116 @@ public:
     double max_body_speed;
 };
 
+//! operators
+
+//! motion operators
+class IntfMotion : public IntfObj
+{
+public:
+    IntfMotion( const QString cmd ) : IntfObj( cmd )
+    {}
+public:
+    double a, v, t;
+
+};
+
+class IntfMovej : public IntfMotion
+{
+public:
+    IntfMovej( const QString cmd="movej" ) : IntfMotion( cmd )
+    {}
+public:
+    double j1, j2, j3, j4, j5;
+};
+
+class IntfMove : public IntfMotion
+{
+public:
+    IntfMove( const QString cmd="move" ) : IntfMotion( cmd )
+    {}
+public:
+    double x,y,z;
+};
+
+class IntfMovel : public IntfMove
+{
+public:
+    IntfMovel( const QString cmd="movel" ) : IntfMove( cmd )
+    {}
+public:
+    double step;
+};
+
+class IntfSleep : public IntfObj
+{
+public:
+    IntfSleep( const QString cmd="sleep" ) : IntfObj( cmd )
+    {}
+public:
+    double s;
+};
+
+class IntfWaituntil : public IntfObj
+{
+public:
+    IntfWaituntil( const QString cmd="waituntil" ) : IntfObj( cmd )
+    {}
+
+public:
+    //! some DIs
+};
+
+class IntfSyncdo : public IntfObj
+{
+public:
+    IntfSyncdo( const QString cmd="syncdo" ) : IntfObj( cmd )
+    {}
+
+public:
+    QByteArray ports, outs;
+};
+
+class IntfDIOs : public IntfObj
+{
+public:
+    IntfDIOs( const QString cmd = "io" ) : IntfObj( cmd )
+    {}
+public:
+    QList<int> value;
+};
+
+class IntfGetio : public IntfObj
+{
+public:
+    IntfGetio( const QString cmd="getio" ) : IntfObj( cmd )
+    {}
+
+public:
+    QString type;
+    QList<int> ports;
+};
+
+class IntfSetio : public IntfObj
+{
+public:
+    IntfSetio( const QString cmd="setio" ) : IntfObj( cmd )
+    {}
+
+public:
+    QString type;
+    QList<int> ports;
+    int value;
+};
+
+class IntfExecute: public IntfObj
+{
+public:
+    IntfExecute( const QString cmd="execute") : IntfObj( cmd )
+    {}
+
+public:
+    QString script;
+};
+
+
 #endif // INTFSERIES_H

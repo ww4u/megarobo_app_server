@@ -105,7 +105,6 @@ class MegaRobo():
     def waitFor( self, sth1, sth2="stoped", tmo = 120 ):
         return self.waitX2( sth1, sth2 )  
 
-
 class RoboT4( MegaRobo ):
     def __init__( self, ip="127.0.0.1", port=50000 ):
         MegaRobo.__init__( self, ip, port )
@@ -172,6 +171,72 @@ class RoboT4( MegaRobo ):
                 "item": act 
         }
         self.doCmd( action )
+
+    def syncdo( self ):
+        cmd = {
+            "command": "setio",
+            "type": "syncdo",
+            "port":[1,2],
+            "value":1
+        }
+        self.doCmd( cmd )
+
+    def getdi( self ):
+        cmd = {
+            "command": "getio",
+            "type": "getdi",
+            "port":[1,2,3,4]
+        }                
+        self.doCmd( cmd )
+        return self.doRecv()
+
+    def getdo( self ):
+        cmd = {
+            "command":"getio",
+            "type":"getdo",
+            "port":[1,2]
+        }        
+        self.doCmd( cmd )
+        return self.doRecv()
+
+    def movej( self ):
+        cmd = {
+            "command": "movej",
+            "a": 1,
+            "v": 10,
+            "t": 1,
+            "j1": 10,
+            "j2": 10,
+            "j3": 10,
+            "j4": 10,
+            "j5": 10
+        }        
+        self.doCmd( cmd )
+
+    def move( self, x, y,z,v=10 ):
+        cmd = {
+            "command": "move",
+            "a": 1,
+            "v": v,
+            "t": 1,
+            "x": x,
+            "y": y,
+            "z": z,
+        }        
+        self.doCmd( cmd )
+
+    def movel( self, x, y, z, v=10, step=20 ):
+        cmd = {
+            "command": "movel",
+            "a": 1,
+            "v": v,
+            "t": 1,
+            "x": x,
+            "y": y,
+            "z": z,
+            "step": step
+        }        
+        self.doCmd( cmd )        
 
     # def query( self, sth ):
     #     query_arg = {
@@ -582,16 +647,28 @@ if __name__=="__main__":
     # print( robo.query_x( "config") )
     # print( robo.query_x( "status") )
 
-    for i in range( 10000000 ):
-        robo = RoboT4( ip="192.168.1.234")
-        # robo = RoboT4( ip="127.0.0.1")
-        # print( i )
-        # robo.query( "link_status" )
-
-        print( i, robo.query( "link_status" ) )
-        # print( robo.query( "device_status" ) )
-        # time.sleep( 1 )
+    robo = RoboT4()
+    # print( robo.query( "cpose" ) )
+    # print( robo.query( "cjoint" ) )
+    
+    # print ( robo.getdi() )
+    # print( robo.getdo() )
+    # robo.syncdo( )
+    # robo.move( 100,0,600 )
+    robo.movel( 250,0,518 )
     exit( 0 )
+
+
+    # for i in range( 10000000 ):
+    #     robo = RoboT4( ip="192.168.1.234")
+    #     # robo = RoboT4( ip="127.0.0.1")
+    #     # print( i )
+    #     # robo.query( "link_status" )
+
+    #     print( i, robo.query( "link_status" ) )
+    #     # print( robo.query( "device_status" ) )
+    #     # time.sleep( 1 )
+    # exit( 0 )
 
     # for i in range( 100000 ):
     #     print( robo.status() )
@@ -614,8 +691,8 @@ if __name__=="__main__":
 
     # time.sleep( 10 )
 
-    robo.step( 0 )
-    assert(False) 
+    # robo.step( 0 )
+    # assert(False) 
 
     # for i in range( 100000 ):
     #     var = robo.query( "meta" );print( var )

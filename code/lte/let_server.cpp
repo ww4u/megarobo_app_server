@@ -150,7 +150,7 @@ MAppServer::ServerStatus Let_Server::status()
     //! the self status
     for ( int i = 0; i < mWorkings.size(); i++ )
     {
-        if ( mWorkings.at(i)->isRunning() )
+        if ( mWorkings.at(i)->isWorking() )
         {   
             return state_working;
         }

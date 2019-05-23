@@ -6,6 +6,7 @@
 
 class MTcpServer;
 class WorkingThread;
+class ConsoleThread;
 
 class MAppServer : public QObject, public ServerIntf
 {
@@ -29,6 +30,7 @@ public:
     virtual void close();
 
     virtual ServerStatus status();
+    virtual ServerStatus controllerStatus();
 
     virtual void on_dislink();
     virtual bool isLinked();
@@ -36,14 +38,21 @@ public:
     int services();
     void registerService( QThread *pService );
 
+    //! interrupt
+    virtual void interrupt( const QByteArray &ary );
+
 public:
     void connectWorking( WorkingThread *pWorking );
     void disconnectWorking( WorkingThread *pWorking );
+
+    void connectConsole( ConsoleThread *pThread );
+    void disconnectConsole( ConsoleThread *pThread );
 
 signals:
 
 protected Q_SLOTS:
     void slot_clean( QThread * );
+    void slot_console_clean( ConsoleThread *pThread );
 
 protected:
     QList< MTcpServer *> mTcpServers;
@@ -54,6 +63,9 @@ protected:
 
     QMutex mServiceMutex;
     QList<QThread*> mServices;
+
+    QMutex mConsoleMutex;
+    QList<ConsoleThread*> mConsoleServices;
 
 };
 

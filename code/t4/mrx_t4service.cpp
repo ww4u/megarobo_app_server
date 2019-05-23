@@ -66,7 +66,7 @@ if ( NULL == _pLocalServer )\
 
 #define ack_raw_status()    query_( on_pose_proc );query_( on_device_status_raw_proc );
 
-MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
+MRX_T4Service::MRX_T4Service( qintptr ptr, quint16 port, QObject *parent ) : MAppService( ptr, port, parent )
 {
     //! fill map
 //    mProcMap.insert( QString("step"), (MAppService::P_PROC)&MRX_T4Service::on_step_proc);
@@ -81,14 +81,16 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, QObject *parent ) : MAppService( ptr,
     attachProc( QString("query"), (api_type)&api_class::on_query_proc);
     attachProc( QString("link_status"), (api_type)&api_class::on_link_status_proc);
 
-//    mProcMap.insert( QString("device_status"), (api_type)&api_class::on_device_status_proc);
-//    mProcMap.insert( QString("exception"), (api_type)&api_class::on_exception_proc);
-//    mProcMap.insert( QString("pose"), (api_type)&api_class::on_pose_proc);
-//    mProcMap.insert( QString("parameter"), (api_type)&api_class::on_parameter_proc);
-
-//    mProcMap.insert( QString("dataset"), (api_type)&api_class::on_dataset_proc);
-//    mProcMap.insert( QString("meta"), (api_type)&api_class::on_meta_proc);
     attachProc( QString("config"), (api_type)&api_class::on_config_proc);
+
+    attachProc( QString("movej"), (api_type)&api_class::on_movej_proc );
+    attachProc( QString("move"), (api_type)&api_class::on_move_proc );
+    attachProc( QString("movel"), (api_type)&api_class::on_movel_proc );
+
+    attachProc( QString("setio"), (api_type)&api_class::on_setio );
+    attachProc( QString("getio"), (api_type)&api_class::on_getio );
+
+    attachProc( QString("execute"), (api_type)&api_class::on_execute );
 
     m_pWorkingThread = new WorkingThread();
     Q_ASSERT( NULL != m_pWorkingThread );
@@ -135,6 +137,8 @@ int MRX_T4Service::_on_postProc( QJsonDocument &doc )
     int localRet;
 
     ack_raw_status();
+
+    //! interrupt status
 
     return localRet;
 }
@@ -384,6 +388,14 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         Q_ASSERT( NULL != m_pWorkingThread );
         m_pWorkingThread->requestInterruption();
     }
+    else if ( var.item == "stopmove" )
+    {
+        //! \todo
+    }
+    else if ( var.item == "startmove" )
+    {
+        //! \todo
+    }
     else
     {}
 
@@ -435,6 +447,14 @@ int MRX_T4Service::post_on_action_proc(  QJsonDocument &doc )
 
         query_( on_parameter_proc );
 
+    }
+    else if ( var.item == "stopmove" )
+    {
+        //! \todo
+    }
+    else if ( var.item == "startmove" )
+    {
+        //! \todo
     }
     else if ( var.item == "test" )
     {
@@ -493,8 +513,12 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
         query_( on_link_status_proc_q );
     }
     else if ( var.item == "device_status" )
-    {logDbg();
-        query_( on_device_status_proc );logDbg();
+    {
+        query_( on_device_status_proc );
+    }
+    else if ( var.item == "controller_status" )
+    {
+        query_( on_controller_status_proc );
     }
     else if ( var.item == "exception" )
     {
@@ -519,6 +543,22 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
     else if ( var.item == "config" )
     {
         query_( on_config_proc_q );
+    }
+    else if ( var.item == "cpose" )
+    {
+        query_( on_cpose_proc );
+    }
+    else if ( var.item == "cjoint" )
+    {
+        query_( on_cjoint_proc );
+    }
+    else if ( var.item == "ctorque" )
+    {
+        //! \todo
+    }
+    else if ( var.item == "ccurrent" )
+    {
+        //! \todo
     }
     else
     { }
@@ -583,20 +623,32 @@ int MRX_T4Service::on_device_status_raw_proc( QJsonDocument &doc )
 
     var.status = "exception_stopd";
 
-    char states[128];
-    localRet = mrgGetRobotStates( local_vi(),
-                      robot_handle(),
-                      wave_table,
-                      states );
-    if ( localRet != 0 )
-    { logError()<<"status read fail"; }
-    else if ( QString( states ).toLower() == "idle" )
-    {
-        var.status = "stoped";
-    }
+    localRet = rawStatus( var.status );
+
+    json_obj( command );
+    json_obj( status );
+
+    doc.setObject( obj );
+
+    return localRet;
+}
+
+int MRX_T4Service::on_controller_status_proc( QJsonDocument &doc )
+{
+    pre_def( Intfdevice_status );
+
+    //! \note contorller status
+    var.command = "controller_status";
+
+    //! first check the local app engine
+    if ( _pLocalServer->controllerStatus() == MAppServer::state_working )
+    { var.status = "running"; logDbg(); }
+    //! if the bg thread is running or the device is running
+    else if ( _pLocalServer->status() == MAppServer::state_working )
+    { var.status = "running"; logDbg(); }
     else
-    {logDbg();
-        var.status = "running";
+    {
+        rawStatus( var.status );
     }
 
     json_obj( command );
@@ -685,6 +737,69 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
     return localRet;
 }
 
+//! \note only pose
+int MRX_T4Service::on_cpose_proc( QJsonDocument &doc )
+{
+    pre_def( Intfpose );
+
+    //! local pose
+//    QJsonObject pose;
+
+    //! x,y,z now
+    float fx, fy, fz;
+    localRet = mrgGetRobotCurrentPosition( local_vi(),
+                                           robot_handle(),
+                                           &fx, &fy, &fz );
+    if ( localRet != 0 )
+    {
+        logWarning()<<"read pos fail";
+        return localRet;
+    }
+
+    obj.insert( "x", fx );
+    obj.insert( "y", fy );
+    obj.insert( "z", fz );
+
+    doc.setObject( obj );
+
+    return localRet;
+}
+
+int MRX_T4Service::on_cjoint_proc( QJsonDocument &doc )
+{
+    pre_def( Intfpose );
+
+    //! local pose
+//    QJsonObject pose;
+
+    float angles[16] = {0};
+
+//    for ( int i = 0; i < 4; i++ )
+    {
+        localRet = mrgGetRobotJointAngle( local_vi(),
+                                      robot_handle(),
+                                      -1,
+                                      angles );
+        if ( localRet != 5 )
+        {
+            logWarning()<<"read joint fail"<<localRet;
+            return localRet;
+        }
+    }
+
+    obj.insert( "j1", angles[0] );
+    obj.insert( "j2", angles[1] );
+    obj.insert( "j3", angles[2] );
+    obj.insert( "j4", angles[3] );
+
+    //! \todo the hand angle
+    obj.insert( "j5", angles[5] );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
 //! query
 //double currents[5];
 //double idleCurrents[5];
@@ -700,6 +815,12 @@ int MRX_T4Service::on_pose_proc(  QJsonDocument &doc )
 for ( int i = 0; i < sizeof_array( var.array); i++ )\
 { local##array<<var.array[i]; }\
 obj.insert( #array, local##array );
+
+#define export_list( array ) QJsonArray local##array;\
+for ( int i = 0; i < var.array.size(); i++ )\
+{ local##array<<var.array[i]; }\
+obj.insert( #array, local##array );
+
 int MRX_T4Service::on_parameter_proc(  QJsonDocument &doc )
 {
     pre_def( Intfparameter );
@@ -971,6 +1092,397 @@ int MRX_T4Service::on_config_proc_q(  QJsonDocument &doc )
     return 0;
 }
 
+int MRX_T4Service::on_movej_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMovej );
+
+    post_call( on_movej_proc );
+
+    return 0;
+}
+
+#define move_sub_joint( id, jid ) \
+if ( _has_item( jid ) )\
+{\
+    dist = var.jid - angles[id];\
+    if ( qAbs(var.v) < FLT_EPSILON )\
+    { return -2; }\
+    else\
+    { t = qAbs( dist ) / qAbs( var.v ); }\
+\
+    if ( _has_item(t) )\
+    { t = var.t; }\
+\
+    if ( t < FLT_EPSILON )\
+    { return -2; }\
+\
+    localRet = mrgMRQAdjust( local_vi(),\
+                             device_handle(),\
+                             id,\
+                             wave_table,\
+                             dist,\
+                             t,\
+                             t * 10000\
+                             );\
+    if ( localRet != 0 )\
+    { return localRet; }\
+}
+
+int MRX_T4Service::post_on_movej_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMovej );
+
+    try_deload_double( j1 );
+    try_deload_double( j2 );
+    try_deload_double( j3 );
+    try_deload_double( j4 );
+    try_deload_double( j5 );
+
+    try_deload_double( a );
+    deload_double( v );
+    try_deload_double( t );
+
+    float angles[16] = {0};
+    localRet = mrgGetRobotJointAngle( local_vi(),
+                                  robot_handle(),
+                                  -1,
+                                  angles );
+    if ( localRet != 5 )
+    { return -1; }
+
+    float dist,t;
+
+    move_sub_joint( 0, j1 );
+    move_sub_joint( 1, j2 );
+    move_sub_joint( 2, j3 );
+    move_sub_joint( 3, j4 );
+
+    move_sub_joint( 4, j5 );
+
+    return 0;
+}
+
+int MRX_T4Service::on_move_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMove );
+
+    post_call( on_move_proc );
+
+    return 0;
+}
+int MRX_T4Service::post_on_move_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMove );
+
+    deload_double( x );
+    deload_double( y );
+    deload_double( z );
+
+    deload_double( v );
+    try_deload_double( a );
+    try_deload_double( t );
+
+    float t, tmo;
+    localRet = guessTTmo( var.x, var.y, var.z, var.v, &t, &tmo );
+    if ( localRet != 0 )
+    { return localRet; }
+
+    //! valid t
+//    if ( var.bmMap.contains("t") && var.bmMap.value("t") )
+    if ( _has_item(t) )
+    { t = var.t; }
+
+    //! check t
+    if ( t < FLT_EPSILON )
+    { return 0; }
+
+    localRet = mrgRobotMove( local_vi(),
+                              robot_handle(),
+                              wave_table,
+                              var.x, var.y, var.z,
+                              t, tmo
+                              );
+
+    return localRet;
+}
+
+int MRX_T4Service::on_movel_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMovel );
+
+    post_call( on_movel_proc );
+
+    return 0;
+}
+int MRX_T4Service::post_on_movel_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMovel );
+
+    deload_double( x );
+    deload_double( y );
+    deload_double( z );
+
+    try_deload_double( step );
+
+    deload_double( v );
+    try_deload_double( a );
+    try_deload_double( t );
+
+    float t, tmo;
+    localRet = guessTTmo( var.x, var.y, var.z, var.v, &t, &tmo );
+    if ( localRet != 0 )
+    { return localRet; }
+
+    //! valid t
+//    if ( var.bmMap.contains("t") && var.bmMap.value("t") )
+    if ( _has_item(t) )
+    { t = var.t; }
+
+    //! valid step
+    if ( _has_item(step) )
+    {
+        mrgSetRobotInterPolateStep( local_vi(),
+                                    robot_handle(),
+                                    var.step );
+    }
+
+    //! check t
+    if ( t < FLT_EPSILON )
+    { return 0; }
+
+    localRet = mrgRobotMoveL( local_vi(),
+                              robot_handle(),
+                              wave_table,
+                              var.x, var.y, var.z,
+                              t, tmo
+                              );
+
+    return localRet;
+}
+
+int MRX_T4Service::on_setio( QJsonDocument &doc )
+{
+    pre_def( IntfSetio );
+
+    deload_string( type );
+
+    if ( var.type == "syncdo" )
+    {
+        localRet = on_seto( doc );
+    }
+    else
+    { return localRet; }
+
+    return localRet;
+}
+
+//! 1,2,3,4
+int MRX_T4Service::on_seto( QJsonDocument &doc )
+{
+    pre_def( IntfSetio );
+
+    deload_string( type );
+    deload_int( value );
+    //! deload array
+    if ( obj.contains("port") )
+    {
+        if ( obj.value("port").isArray() )
+        {
+            QJsonArray ary = obj.value("port").toArray();
+            for ( int i = 0; i < ary.size(); i++ )
+            {
+                var.ports.append( ary.at(i).toInt() );
+            }
+        }
+        else
+        {
+            var.ports.append( obj.value("port").toInt() );
+        }
+    }
+
+    if ( var.ports.size() > 0  )
+    {}
+    else
+    { return localRet; }
+
+    //! setio
+    for ( int i = 0; i < var.ports.size(); i++ )
+    {
+        localRet = mrgProjectSetYout( local_vi(),
+                                      var.ports.at(i),
+                                      var.value );
+        if ( localRet != 0 )
+        { return localRet; }
+    }
+
+    return 0;
+}
+
+int MRX_T4Service::on_getio( QJsonDocument &doc )
+{
+    pre_def( IntfGetio );
+
+    deload_string( type );
+    //! deload array
+    if ( obj.contains("port") )
+    {
+        if ( obj.value("port").isArray() )
+        {
+            QJsonArray ary = obj.value("port").toArray();
+            for ( int i = 0; i < ary.size(); i++ )
+            {
+                var.ports.append( ary.at(i).toInt() );
+            }
+        }
+        else
+        {
+            var.ports.append( obj.value("port").toInt() );
+        }
+    }
+
+    if ( var.ports.size() > 0  )
+    {}
+    else
+    { return localRet; }
+
+    //! query
+    if ( var.type == "getdi" )
+    {
+        query_x( on_getdi, var.ports );
+    }
+    else if ( var.type == "getdo" )
+    {
+        query_x( on_getdo, var.ports );
+    }
+    else
+    { return localRet; }
+
+    return localRet;
+}
+int MRX_T4Service::on_getdi( QJsonDocument &doc, QList<int> &ports )
+{
+    pre_def( IntfDIOs );
+
+    //! get all di
+    quint32 dis;
+    localRet = mrgProjectGetXinState( local_vi(), 0, &dis );
+    if ( localRet < 0 )
+    { return localRet; }
+
+    //! return the need
+    for ( int i = 0; i < ports.size(); i++ )
+    {
+        var.value.append( ( dis >> ( ports.at(i)-1 ) ) & 0x01 );
+    }
+
+    //! export
+    obj.insert("command", "getdi" );
+    export_list( value );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+int MRX_T4Service::on_getdo( QJsonDocument &doc, QList<int> &ports )
+{
+    //! \todo get do
+
+    pre_def( IntfDIOs );
+
+    //! get all di
+    quint32 dis;
+    localRet = mrgProjectGetXinState( local_vi(), 0, &dis );
+    if ( localRet < 0 )
+    { return localRet; }
+
+    //! return the need
+    for ( int i = 0; i < ports.size(); i++ )
+    {
+        var.value.append( ( dis >> ( ports.at(i)-1 ) ) & 0x01 );
+    }
+
+    //! export
+    obj.insert("command", "getdo" );
+    export_list( value );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
+int MRX_T4Service::on_execute( QJsonDocument &doc )
+{
+    pre_def(IntfExecute);
+
+    post_call( on_execute );
+
+    return 0;
+}
+int MRX_T4Service::post_on_execute( QJsonDocument &doc )
+{
+    pre_def(IntfExecute);
+
+    deload_string( script );
+
+    QString curPath = QDir::currentPath();
+    QDir::setCurrent("G:/study/py/megarobo");
+
+    QString scriptFile = "scrpt.mrl";
+
+    QFile file( scriptFile );
+    if ( file.open( QIODevice::WriteOnly ) )
+    {}
+    else
+    { return -1; }
+
+    file.write( var.script.toLatin1() );
+
+    file.close();
+
+    QString cmd="cmd";
+    QStringList argList;
+    argList<<"/c"<<"runmrl.bat"<<scriptFile;
+
+    //! start console thread
+    ConsoleThread *pConsoleThread = new ConsoleThread( cmd, argList );
+    if ( NULL == pConsoleThread )
+    { return -1; }
+
+    _pLocalServer->connectConsole( pConsoleThread );
+
+    pConsoleThread->start();
+
+    logDbg();
+
+    return localRet;
+}
+
+int MRX_T4Service::rawStatus( QString &status )
+{
+    check_connect();
+
+    int localRet;
+    char states[128];
+
+    status = "exception_stoped";
+    localRet = mrgGetRobotStates( local_vi(),
+                      robot_handle(),
+                      wave_table,
+                      states );
+    if ( localRet != 0 )
+    { logError()<<"status read fail"; }
+    else if ( QString( states ).toLower() == "idle" )
+    {
+        status = "stoped";
+    }
+    else
+    {
+        status = "running";
+    }
+
+    return localRet;
+}
+
 int MRX_T4Service::guessTmo( int joint, float dist, float speed )
 {
     Q_ASSERT ( qAbs(speed) > FLT_EPSILON );
@@ -981,6 +1493,42 @@ int MRX_T4Service::guessTmo( int joint, float dist, float speed )
     { return 1000; }
 
     return 60 * t *1000;
+}
+
+int MRX_T4Service::guessTTmo( float x, float y, float z,
+                              float v, float *pT, float *pTmo )
+{
+    int localRet;
+
+    float fx, fy, fz;
+    localRet = mrgGetRobotCurrentPosition( m_pServer->deviceVi(),
+                                           m_pServer->robotHandle(),
+                                           &fx, &fy, &fz );
+    if ( localRet != 0 )
+    { return localRet; }
+
+
+    //! calc the dist
+    float dist = eulaDistance( x, y, z, fx, fy, fz );
+
+    *pT = dist / qAbs( v );
+    *pTmo = dist * 1000 + *pT + 500;
+
+    if ( *pT < FLT_EPSILON )
+    { *pT = 0; }
+
+    return 0;
+}
+
+double MRX_T4Service::eulaDistance( double x, double y, double z,
+                            double x1, double y1, double z1 )
+{
+    //! calc the distance
+    double dist = sqrt( pow(  x - x1, 2) +
+                       pow(  y - y1, 2) +
+                       pow(  z - z1, 2)
+                       );
+    return dist;
 }
 
 float MRX_T4Service::alignP360( float degree )

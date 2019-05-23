@@ -10,6 +10,7 @@ public:
 
 public:
     QString command;
+    QMap<QString, bool> bmMap;
 };
 
 class IntfNotify : public IntfObj

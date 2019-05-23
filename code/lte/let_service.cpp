@@ -13,7 +13,7 @@
 
 #define check_local_ret()  if( localRet != 0 ){ return localRet; }
 
-Let_Service::Let_Service( qintptr ptr, QObject *parent ) : MAppService( ptr, parent )
+Let_Service::Let_Service( qintptr ptr, quint16 port, QObject *parent ) : MAppService( ptr, port, parent )
 {
     attachProc( QString("request"), (api_type)&api_class::on_request );
     attachProc( QString("query"), (api_type)&api_class::on_query );

@@ -26,7 +26,7 @@ public:
 protected:
     MAppServer *m_pServer;
 
-private:
+protected:
     quint16 mPort;
 
 signals:

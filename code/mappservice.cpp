@@ -40,9 +40,10 @@ void MServiceEvent::setBufferData( const QByteArray &ary )
 QByteArray MServiceEvent::bufferData()
 { return mBufData; }
 
-MAppService::MAppService(qintptr ptr, QObject *parent) : QThread(parent)
+MAppService::MAppService(qintptr ptr, quint16 port, QObject *parent) : QThread(parent)
 {
     mPtr = ptr;
+    mPort = port;
     m_pSocket = NULL;
 
     m_pServer = NULL;
@@ -616,10 +617,13 @@ void MAppService::slot_on_socket_disconnect()
 //! thread
 WorkingThread::WorkingThread( QObject *parent ) : QThread( parent )
 {
+    mbInRun = false;
 }
 
 void WorkingThread::run()
 {
+    mbInRun = true;
+
     ProxyApi* pApi;
     int ret = -1;
     while( !mQueue.isEmpty() )
@@ -674,6 +678,7 @@ void WorkingThread::run()
         delete pApi;
     }
 
+    mbInRun = false;
 }
 
 int WorkingThread::attachProc( MAppService *pObj,
@@ -710,4 +715,43 @@ int WorkingThread::attachProc( MAppService *pObj,
     }
 
     return 0;
+}
+
+bool WorkingThread::isWorking()
+{
+    bool bQueue;
+    mMutex.lock();
+        bQueue = mQueue.size() > 0;
+    mMutex.unlock();
+
+    return bQueue || mbInRun;
+}
+
+ConsoleThread::ConsoleThread( QString &prog, QStringList &args, QObject *parent ) :QThread( parent )
+{
+    mProg = prog;
+    mArgs = args;
+
+    connect( this, SIGNAL(finished()), this, SLOT(deleteLater()) );
+}
+
+//! remove from the container
+ConsoleThread::~ConsoleThread()
+{
+    logDbg();
+
+//    emit signal_clean( this );
+}
+
+void ConsoleThread::run()
+{
+    QProcess process;
+
+    process.start( mProg, mArgs );
+
+    process.waitForFinished( -1 );
+
+    emit signal_clean( this );
+
+    logDbg_Thread();
 }

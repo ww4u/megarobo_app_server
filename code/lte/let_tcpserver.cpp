@@ -13,7 +13,7 @@ Let_TcpServer::Let_TcpServer( QObject *parent ) : MTcpServer( parent )
 void Let_TcpServer::incomingConnection(qintptr socketDescriptor)
 {
     //! self thread
-    MAppService *thread = new Let_Service(socketDescriptor, 0 );
+    MAppService *thread = new Let_Service(socketDescriptor, mPort, 0 );
     if ( NULL == thread )
     { return; }
     thread->moveToThread( thread );
@@ -27,8 +27,6 @@ void Let_TcpServer::incomingConnection(qintptr socketDescriptor)
     connect( thread, SIGNAL(signal_clean(QThread*)),
              pLocalServer, SLOT(slot_clean(QThread*)));
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-
-//    logDbg()<<pLocalServer->mTickTmo;
 
     thread->start();
 }

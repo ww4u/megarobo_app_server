@@ -6,7 +6,7 @@
 class Let_Service : public MAppService
 {
 public:
-    Let_Service( qintptr ptr, QObject *parent = nullptr );
+    Let_Service( qintptr ptr, quint16 port, QObject *parent = nullptr );
     virtual ~Let_Service();
 
 public:

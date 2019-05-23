@@ -23,6 +23,13 @@
                         \
                         output( localDoc ); }
 
+#define query_x( proc, x )  { QJsonDocument localDoc;\
+                        localRet = proc( localDoc, x );\
+                        if ( localRet != 0 )\
+                        { return localRet; }\
+                        \
+                        output( localDoc ); }
+
 #define post_call( api )    Q_ASSERT( NULL != m_pWorkingThread );\
                             localRet = m_pWorkingThread->attachProc( this, \
                                                                      (MAppService::P_PROC)(&api_class::post_##api), \
@@ -87,7 +94,7 @@ public:
     typedef int (MAppService::*P_PROC)( QJsonDocument &obj  );
 
 public:
-    explicit MAppService( qintptr ptr, QObject *parent = nullptr);
+    explicit MAppService( qintptr ptr, quint16 port, QObject *parent = nullptr);
     virtual ~MAppService();
 
 protected:
@@ -139,10 +146,9 @@ protected:
 protected:
     qintptr mPtr;
 
-//    QMutex mSendMutex;
+    quint16 mPort;
     QTcpSocket *m_pSocket;
 
-//    QMutex mRecvMutex;
     QByteArray mRecvCache;
     QByteArray mOutput;
 
@@ -197,11 +203,31 @@ public:
                      MAppService::P_PROC postProc,
                      const QString &name,
                      QVariant var );
+    bool isWorking();
 
 protected:
     QQueue<ProxyApi*> mQueue;
     QMutex mMutex;
+    bool mbInRun;
 
+};
+
+class ConsoleThread : public QThread
+{
+    Q_OBJECT
+public:
+    ConsoleThread( QString &prog, QStringList &args, QObject *parent = nullptr );
+    virtual ~ConsoleThread();
+
+Q_SIGNALS:
+    void signal_clean( ConsoleThread *pThread );
+
+protected:
+    virtual void run();
+
+protected:
+    QString mProg;
+    QStringList mArgs;
 };
 
 class ProxyApi
