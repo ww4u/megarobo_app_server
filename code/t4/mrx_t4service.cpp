@@ -1448,7 +1448,11 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 
     QString cmd="cmd";
     QStringList argList;
+#ifdef _WIN32
     argList<<"/c"<<"runmrl.bat"<<scriptFile;
+#else
+    argList<<"/c"<<"runmrl.sh"<<scriptFile;
+#endif
 
     //! start console thread
     ConsoleThread *pConsoleThread = new ConsoleThread( cmd, argList );
