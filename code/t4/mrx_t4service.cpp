@@ -83,6 +83,7 @@ MRX_T4Service::MRX_T4Service( qintptr ptr, quint16 port, QObject *parent ) : MAp
 
     attachProc( QString("config"), (api_type)&api_class::on_config_proc);
 
+    attachProc( QString("alignj"), (api_type)&api_class::on_alignj_proc );
     attachProc( QString("movej"), (api_type)&api_class::on_movej_proc );
     attachProc( QString("move"), (api_type)&api_class::on_move_proc );
     attachProc( QString("movel"), (api_type)&api_class::on_movel_proc );
@@ -1092,6 +1093,48 @@ int MRX_T4Service::on_config_proc_q(  QJsonDocument &doc )
     return 0;
 }
 
+int MRX_T4Service::on_alignj_proc( QJsonDocument &doc )
+{
+    pre_def( IntfAlignj );
+
+    post_call( on_alignj_proc );
+
+    return 0;
+}
+int MRX_T4Service::post_on_alignj_proc( QJsonDocument &doc )
+{
+    pre_def( IntfMovej );
+
+    try_deload_double( j1 );
+    try_deload_double( j2 );
+    try_deload_double( j3 );
+    try_deload_double( j4 );
+    try_deload_double( j5 );
+
+    try_deload_double( a );
+    deload_double( v );
+    try_deload_double( t );
+
+    if ( _has_item(j4) )
+    {
+        //! \note align the dst angle
+        float normAngle = 270 - var.j4;
+        normAngle = alignP360( normAngle );
+
+        //! \note config the speed not time
+        int tmoms;
+        tmoms = guessTmo( 3, 360, var.v );
+        localRet = mrgSetRobotWristPose( local_vi(),
+                                              robot_handle(),
+                                              wave_table,
+                                              normAngle,
+                                              var.v,
+                                              tmoms );
+    }
+
+    return localRet;
+}
+
 int MRX_T4Service::on_movej_proc( QJsonDocument &doc )
 {
     pre_def( IntfMovej );
@@ -1446,12 +1489,16 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 
     file.close();
 
+
+
+#ifdef _WIN32
     QString cmd="cmd";
     QStringList argList;
-#ifdef _WIN32
     argList<<"/c"<<"runmrl.bat"<<scriptFile;
 #else
-    argList<<"/c"<<"runmrl.sh"<<scriptFile;
+    QString cmd="sh";
+    QStringList argList;
+    argList<<"runmrl.sh"<<scriptFile;
 #endif
 
     //! start console thread

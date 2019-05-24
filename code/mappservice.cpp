@@ -753,5 +753,5 @@ void ConsoleThread::run()
 
     emit signal_clean( this );
 
-    logDbg_Thread();
+    logDbg_Thread()<<process.readAll();
 }

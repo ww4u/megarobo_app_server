@@ -196,6 +196,15 @@ public:
 
 };
 
+class IntfAlignj : public IntfMotion
+{
+public:
+    IntfAlignj( const QString cmd="alignj" ) : IntfMotion( cmd )
+    {}
+public:
+    double j1, j2, j3, j4, j5;
+};
+
 class IntfMovej : public IntfMotion
 {
 public:

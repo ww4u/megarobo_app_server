@@ -58,6 +58,9 @@ protected:
     int on_config_proc_q(  QJsonDocument &doc );
 
     //! motion
+    int on_alignj_proc( QJsonDocument &doc );
+    int post_on_alignj_proc( QJsonDocument &doc );
+
     int on_movej_proc( QJsonDocument &doc );
     int post_on_movej_proc( QJsonDocument &doc );
 
