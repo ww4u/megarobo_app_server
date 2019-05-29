@@ -21,6 +21,7 @@ protected:
     int on_action_eStop( QJsonDocument &doc );
 
     int post_on_action_home( QJsonDocument &doc );
+    int post_on_action_homeo( QJsonDocument &doc );
     int post_on_action_homez( QJsonDocument &doc );
     int post_on_action_origin( QJsonDocument &doc );
     int post_on_action_to( QJsonDocument &doc );

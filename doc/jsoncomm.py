@@ -258,6 +258,14 @@ class LetRobo( MegaRobo ):
         }
         self.doCmd( localVar )
 
+    def request_homeo( self, v = 10 ):
+        localVar = {
+            "command": "request",
+            "item": "homeo",
+            "velocity": v
+        }
+        self.doCmd( localVar )        
+
     def request_homez( self, v = 10 ):
         localVar = {
             "command": "request",
@@ -591,7 +599,18 @@ if __name__=="__main__":
 # def roboFlow():
 
     # robo = LetRobo( ip="192.168.1.60")
+    robo = LetRobo()
+    robo.config_orig( 100,50,0 )
+    # print( robo.query( "config") )
+    for i in range(  1000 ):
+        robo.request_home(v=100)
+        robo.waitIdle()
+
+        robo.request_homeo(v=100)
+        robo.waitIdle()
+        print( i )
     # print( robo.pose() )
+    exit(0)
 
     # testMain( robo )
 

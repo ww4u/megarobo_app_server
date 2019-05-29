@@ -29,8 +29,6 @@ Let_Service::~Let_Service()
 
 bool Let_Service::onUserEvent(QEvent *pEvent)
 {
-//    logDbg_Thread();
-
     MServiceEvent *pLocalEvent = (MServiceEvent*)pEvent;
     QJsonDocument localDoc = pLocalEvent->mVar1.toJsonDocument();
 
@@ -60,6 +58,12 @@ int Let_Service::on_request( QJsonDocument &doc )
         //! stop at first
         on_action_stop( doc );
         post_call( on_action_home );
+    }
+    else if (  var.item == "homeo" )
+    {
+        //! stop at first
+        on_action_stop( doc );
+        post_call( on_action_homeo );
     }
     else if ( var.item == "homez" )
     {
@@ -126,19 +130,19 @@ int Let_Service::on_request( QJsonDocument &doc )
 int Let_Service::on_action_stop( QJsonDocument &doc )
 {
     pre_def( IntfRequest );
-logDbg();
+
     //! terminate working
     m_pWorkingThread->requestInterruption();
     m_pWorkingThread->wait();
-logDbg();
+
     clearContinue();
-logDbg();
+
     localRet = _pLocalServer->mZAxes.stop();
     check_local_ret();
-logDbg();
+
     localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
     check_local_ret();
-logDbg();
+
     return 0;
 }
 int Let_Service::on_action_eStop( QJsonDocument &doc )
@@ -195,6 +199,24 @@ int Let_Service::post_on_action_home( QJsonDocument &doc )
                                  t, tmo
                                  );
         if ( localRet != 0 ){ return localRet; }
+    }
+
+    return localRet;
+}
+
+int Let_Service::post_on_action_homeo( QJsonDocument &doc )
+{
+    pre_def( IntfRequest );
+
+    deload_double( velocity );
+
+    //! home
+    {
+        localRet = mrgRobotGoHome( local_vi(),
+                                   robot_handle(),
+                                   1000*1000 / qAbs( var.velocity ) + 120000 );
+        if ( localRet != 0 )
+        { return localRet; }
     }
 
     return localRet;

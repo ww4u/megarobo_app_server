@@ -364,6 +364,9 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
 
         localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
 
+        //! \errant wait for end
+        localRet = mrgRobotWaitEnd( local_vi(), robot_handle(), wave_table, 100 );
+
         ack_raw_status();
 
         return localRet;
