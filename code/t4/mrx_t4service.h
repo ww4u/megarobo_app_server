@@ -5,6 +5,8 @@
 
 class MRX_T4Service : public MAppService
 {
+    Q_OBJECT
+
 public:
     MRX_T4Service( qintptr ptr, quint16 port, QObject *parent = nullptr );
     virtual ~MRX_T4Service();
@@ -15,6 +17,8 @@ public:
     virtual void attachServer( MAppServer *pServer );
 
 protected:
+    virtual int on_refreshtimeout();
+
     virtual int _on_preProc( QJsonDocument &doc );
     virtual int _on_postProc( QJsonDocument &doc );
 
@@ -25,6 +29,11 @@ protected:
 
     int on_joint_step_proc(  QJsonDocument &doc );
     int post_on_joint_step_proc(  QJsonDocument &doc );
+
+    //! n step
+    int joint_stepN_proc(  QJsonDocument &doc );
+    //! step distance
+    int joint_stepD_proc(  QJsonDocument &doc );
 
     int on_action_proc(  QJsonDocument &doc );
     int post_on_action_proc(  QJsonDocument &doc );

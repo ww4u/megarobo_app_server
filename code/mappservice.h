@@ -71,6 +71,7 @@ public:
     {
         e_serv_event_output = QEvent::User + 1,
         e_serv_event_quit,
+        e_serv_refresh_timer,
     };
 
 public:
@@ -100,9 +101,9 @@ public:
 
 protected:
     virtual void run();
-
     virtual bool event(QEvent *event);
 
+    virtual int on_refreshtimeout();
 public:
     virtual bool onUserEvent( QEvent *pEvent );
 
@@ -120,6 +121,8 @@ public:
     void clearContinue();
     void continueNext();
     bool isPending();
+
+    void postRefresh( bool b );
 
 public:
     void connnectConsoleWorkings( ConsoleThread *p );
@@ -143,6 +146,7 @@ protected:
 
     void on_event_output( QEvent *pEvent );
     void on_event_quit( QEvent *pEvent );
+    void on_event_refreshtimer( QEvent *pEvent );
 
     //! help api
 protected:
@@ -174,6 +178,8 @@ protected:
     bool mbTmo;
     int mTimeout;
 
+    QTimer *m_pRefreshTimer;
+
     QSemaphore mContSemaphore;      //! semaphore
     QSemaphore mPendSema;
 signals:
@@ -188,6 +194,7 @@ public slots:
     void slot_disconnect();
 
     void slot_timeout();
+    void slot_refreshtimeout();
 
     void slot_event_enter();
     void slot_event_exit( QByteArray ary );
@@ -196,6 +203,7 @@ public slots:
     void slot_on_socket_disconnect();
 
     void slot_console_clean( ConsoleThread *pThread );
+
 
 };
 

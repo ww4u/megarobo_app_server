@@ -15,18 +15,21 @@
 
 #define _try_deload_double( obj, item, def )     _try_deload_xx( obj, item, Double, def )\
                                                  else{ var.bmMap.insert( #item, false); }
-
 #define _deload_double( obj, item )   _try_deload_xx( obj, item, Double, 0 )\
                                       else{ return -1; }
 
+#define _try_deload_string( obj, item )   _try_deload_xx( obj, item, String, "" )\
+                                     else{ var.bmMap.insert( #item, false); }
 #define _deload_string( obj, item )   _try_deload_xx( obj, item, String, "" )\
                                      else{ return -1; }
 
-#define _try_deload_string( obj, item )   _try_deload_xx( obj, item, String, "" )\
+#define _try_deload_int( obj, item )   _try_deload_xx( obj, item, Int, "" )\
                                      else{ var.bmMap.insert( #item, false); }
-
 #define _deload_int( obj, item )    _try_deload_xx( obj, item, Int, 0 )\
                                     else{ return -1; }
+
+#define _try_deload_bool( obj, item )   _try_deload_xx( obj, item, Bool, "" )\
+                                     else{ var.bmMap.insert( #item, false); }
 #define _deload_bool( obj, item )    _try_deload_xx( obj, item, Bool, false )\
                                     else{ return -1; }
 
@@ -54,7 +57,10 @@
                                             _deload_int( obj, item2 )
 
 #define deload_int( item )      _deload_int( obj, item )
+#define try_deload_int( item )   _try_deload_int( obj, item )
+
 #define deload_bool( item )     _deload_bool( obj, item )
+#define try_deload_bool( item )   _try_deload_bool( obj, item )
 
 #define json_obj( item )    obj.insert( #item, var.item );
 #define json_obj2s( item1, item2 )    json_obj( item1 );\

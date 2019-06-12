@@ -82,6 +82,16 @@ void MAppService::run()
     { logDbg(); return; }
 //    logDbg_Thread()<<b<<tSocket.thread();
 
+    //! connect timer
+    m_pRefreshTimer = new QTimer(this);
+    if ( NULL == m_pRefreshTimer )
+    {  logDbg(); }
+    else
+    {
+        m_pRefreshTimer->setInterval( 1000 );
+        connect( m_pRefreshTimer, SIGNAL(timeout()), this, SLOT(slot_refreshtimeout()) );
+    }
+
     connect( &tSocket, SIGNAL(readyRead()),
              this, SLOT(slot_dataIn()) );
     m_pSocket = &tSocket;    
@@ -139,11 +149,20 @@ bool MAppService::event(QEvent *event)
         on_event_quit( event );
         return true;
     }
+    else if ( event->type() == MServiceEvent::e_serv_refresh_timer )
+    {
+        on_event_refreshtimer( event );
+        return true;
+    }
+
     else
     {}
 
     return QThread::event( event );
 }
+
+int MAppService::on_refreshtimeout()
+{ return 0; }
 
 bool MAppService::onUserEvent( QEvent *pEvent )
 {
@@ -177,6 +196,16 @@ void MAppService::continueNext()
 bool MAppService::isPending()
 {
     return ( mPendSema.available() > 0 && mContSemaphore.available() < 1 );
+}
+
+void MAppService::postRefresh( bool b )
+{
+    MServiceEvent *pEvent = new MServiceEvent( MServiceEvent::e_serv_refresh_timer );
+    if ( NULL == pEvent )
+    { return; }
+
+    pEvent->setPara( b );
+    qApp->postEvent( this, pEvent );
 }
 
 void MAppService::connnectConsoleWorkings( ConsoleThread *p )
@@ -432,9 +461,11 @@ void MAppService::resetTimeout()
 //    logDbg_Thread();
 }
 
-
 void MAppService::pre_quit()
 {
+    if ( NULL != m_pRefreshTimer )
+    { m_pRefreshTimer->stop(); }
+
     //! stop local console
     stopConsoleWorkings();
 
@@ -528,6 +559,23 @@ void MAppService::on_event_output( QEvent *pEvent )
 
 void MAppService::on_event_quit( QEvent *pEvent )
 { quit(); }
+
+void MAppService::on_event_refreshtimer( QEvent *pEvent )
+{
+    MServiceEvent *pServEvent = (MServiceEvent*)pEvent;
+    if ( NULL == pServEvent )
+    { return;  }
+
+    if ( m_pRefreshTimer != NULL )
+    {}
+    else
+    { return; }
+
+    if ( pServEvent->mVar1.toBool() )
+    { m_pRefreshTimer->start(); logDbg();}
+    else
+    { m_pRefreshTimer->stop(); logDbg();}
+}
 
 float MAppService::motionTime( float dist, float v )
 {
@@ -632,6 +680,11 @@ void MAppService::slot_timeout()
 
 //    logDbg_Thread();
     mbTmo = true;
+}
+
+void MAppService::slot_refreshtimeout()
+{
+    on_refreshtimeout();
 }
 
 void MAppService::slot_event_enter()

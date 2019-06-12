@@ -40,6 +40,7 @@ public:
     double angle;
     double z;
     bool continous;
+
 };
 
 class Intfjoint_step : public IntfObj
@@ -51,6 +52,7 @@ public:
     double value;
     int joint;
     bool continous;
+    double step;
 };
 
 class Intfaction : public IntfObj
