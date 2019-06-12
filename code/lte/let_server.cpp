@@ -89,6 +89,17 @@ int Let_Server::open()
         }
         mDeviceHandle = deviceHandles[0];
 
+        //! \note get sn
+        char sns[128];
+        ret = mrgGetDeviceSerialNumber( mVi, mDeviceHandle, sns );
+        if ( ret != 0 )
+        {
+            ret = -4;
+            break;
+        }
+        mDeviceSNs.append( sns );
+        logDbg()<<mDeviceSNs;
+
         //! \todo update para
         char idns[128];
         ret = mrgGateWayIDNQuery( mVi, idns );

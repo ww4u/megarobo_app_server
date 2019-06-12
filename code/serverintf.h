@@ -31,6 +31,7 @@ protected:
     int mDeviceHandle;
 
     QString mSN, mFirmwareVer, mMechanicalVer;
+    QStringList mDeviceSNs;
 };
 
 #endif // SERVERINTF_H

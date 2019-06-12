@@ -16,6 +16,8 @@
 
 #include "mappserver.h"
 
+#define WAIT_TIME_OUT   60000
+
 //! create the type
 MServiceEvent::MServiceEvent( int tpe ) : QEvent( QEvent::Type(tpe) )
 {
@@ -177,6 +179,48 @@ bool MAppService::isPending()
     return ( mPendSema.available() > 0 && mContSemaphore.available() < 1 );
 }
 
+void MAppService::connnectConsoleWorkings( ConsoleThread *p )
+{
+    mConsoleMutex.lock();
+        if ( mConsoleWorkings.contains(p) )
+        {}
+        else
+        {
+            mConsoleWorkings.append( p );
+
+            connect( p, SIGNAL(signal_clean(ConsoleThread*)),
+                     this, SLOT(slot_console_clean(ConsoleThread*)) );
+        }
+    mConsoleMutex.unlock();
+}
+void MAppService::disconnectConsoleWorkings( ConsoleThread *p )
+{
+    mConsoleMutex.lock();
+        mConsoleWorkings.removeAll( p );
+    mConsoleMutex.unlock();
+}
+
+void MAppService::stopConsoleWorkings()
+{
+    mConsoleMutex.lock();
+        foreach( ConsoleThread *p, mConsoleWorkings )
+        {
+            p->requestInterruption();
+        }
+
+        foreach( ConsoleThread *p, mConsoleWorkings )
+        {
+            if ( p->wait( WAIT_TIME_OUT ) )
+            {}
+            else
+            {
+                p->terminate();
+                logWarning();
+            }
+        }
+    mConsoleMutex.unlock();
+}
+
 //! post event
 void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
 {
@@ -200,7 +244,7 @@ void MAppService::postEvent( int tpe, QVariant v1, QVariant v2, QVariant v3 )
     m_pExec->postEvent( pEvent );
 }
 
-int MAppService::attachProc( const QString &name, MAppService::P_PROC proc, quint64 tmo )
+int MAppService::attachProc( const QString &name, MAppService::P_PROC proc, QMutex *pMutex, quint64 tmo )
 {
     ProxyApi *pApi;
 
@@ -211,6 +255,7 @@ int MAppService::attachProc( const QString &name, MAppService::P_PROC proc, quin
     pApi->mApiName = name;
     pApi->mTmo = tmo;
     pApi->m_pProc = proc;
+    pApi->m_pMutex = pMutex;
 
     pApi->m_pObj = this;
     pApi->mLastTs = 0;
@@ -387,9 +432,12 @@ void MAppService::resetTimeout()
 //    logDbg_Thread();
 }
 
-#define WAIT_TIME_OUT   60000
+
 void MAppService::pre_quit()
 {
+    //! stop local console
+    stopConsoleWorkings();
+
     //! request
     if ( m_pExec != NULL )
     {
@@ -614,6 +662,11 @@ void MAppService::slot_on_socket_disconnect()
     quit();
 }
 
+void MAppService::slot_console_clean( ConsoleThread *pThread )
+{
+    disconnectConsoleWorkings( pThread );
+}
+
 //! thread
 WorkingThread::WorkingThread( QObject *parent ) : QThread( parent )
 {
@@ -647,6 +700,10 @@ void WorkingThread::run()
 //            logDbg()<<pApi->mApiName<<"enter";
             QJsonDocument doc = pApi->mVar.toJsonDocument();
 
+            //! fifo it
+            if ( pApi->m_pMutex != NULL )
+            { pApi->m_pMutex->lock(); }
+
             //! pre
             if ( pApi->m_pPreProc!= NULL )
             { ret = (((pApi->m_pObj)->*(pApi->m_pPreProc)))( doc ); }
@@ -661,6 +718,9 @@ void WorkingThread::run()
             //! post
             if ( pApi->m_pPostProc!= NULL )
             { ret = (((pApi->m_pObj)->*(pApi->m_pPostProc)))( doc ); }
+
+            if ( pApi->m_pMutex != NULL )
+            { pApi->m_pMutex->unlock(); }
 
 //            logDbg()<<pApi->mApiName<<"exit";
         }
@@ -745,11 +805,31 @@ ConsoleThread::~ConsoleThread()
 
 void ConsoleThread::run()
 {
+    //! compiled to temp.py
     QProcess process;
-
+    logDbg()<<mProg<<mArgs;
     process.start( mProg, mArgs );
-
     process.waitForFinished( -1 );
+
+#ifdef _WIN32
+    //! use python process only
+    QStringList args;
+    args<<"temp.py";
+    process.start( "python", args );
+#endif
+
+    while( true )
+    {logDbg_Thread();
+        if ( process.waitForFinished( 1000 ) )
+        { break; }
+
+        if ( isInterruptionRequested() )
+        {logDbg();
+            process.kill();
+            process.waitForFinished();
+            break;
+        }
+    }
 
     emit signal_clean( this );
 

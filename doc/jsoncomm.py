@@ -598,18 +598,24 @@ def testMain( robo ):
 if __name__=="__main__":
 # def roboFlow():
 
-    # robo = LetRobo( ip="192.168.1.60")
-    robo = LetRobo()
-    robo.config_orig( 100,50,0 )
-    # print( robo.query( "config") )
-    for i in range(  1000 ):
-        robo.request_home(v=100)
-        robo.waitIdle()
+    robo = RoboT4( ip="169.254.1.2")
+    
+    exit(0)
 
-        robo.request_homeo(v=100)
-        robo.waitIdle()
+    # robo = LetRobo( ip="192.168.1.60")
+    for i in range( 1000 ):
         print( i )
-    # print( robo.pose() )
+        robo = LetRobo( ip="192.168.1.43" )
+    # robo.config_orig( 100,50,0 )
+    # # print( robo.query( "config") )
+    # for i in range(  1000 ):
+    #     robo.request_home(v=100)
+    #     robo.waitIdle()
+
+    #     robo.request_homeo(v=100)
+    #     robo.waitIdle()
+    #     print( i )
+    # # print( robo.pose() )
     exit(0)
 
     # testMain( robo )

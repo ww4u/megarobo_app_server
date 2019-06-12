@@ -301,6 +301,7 @@ public:
 
 public:
     QString script;
+    QString shell;
 };
 
 

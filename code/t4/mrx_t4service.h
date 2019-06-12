@@ -48,6 +48,9 @@ protected:
 
     int on_cpose_proc( QJsonDocument &doc );
     int on_cjoint_proc( QJsonDocument &doc );
+    int on_ctorque_proc( QJsonDocument &doc );
+    int on_ccurrent_proc( QJsonDocument &doc );
+
     int on_parameter_proc(  QJsonDocument &doc );
 
     int on_dataset_proc(  QJsonDocument &doc );
@@ -79,6 +82,11 @@ protected:
 
     int on_execute( QJsonDocument &doc );
     int post_on_execute( QJsonDocument &doc );
+    int post_on_execute_script( QJsonDocument &doc );
+    int post_on_execute_shell( QJsonDocument &doc );
+
+    void switch_shell_dir();
+    int run_shell( const QString &fileName );
 
 protected:
     int rawStatus( QString &status );

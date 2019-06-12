@@ -27,7 +27,7 @@ MAppServer::ServerStatus MAppServer::status()
 { return state_idle; }
 
 MAppServer::ServerStatus MAppServer::controllerStatus()
-{
+{logDbg()<<mConsoleServices.size();
     if ( mConsoleServices.size() > 0 )
     { return state_working; }
     else
@@ -56,6 +56,11 @@ void MAppServer::registerService( QThread *pService )
     mServiceMutex.unlock();
 }
 
+int MAppServer::workings()
+{
+    return mWorkings.size();
+}
+
 void MAppServer::interrupt( const QByteArray &ary )
 {}
 
@@ -81,7 +86,7 @@ void MAppServer::connectConsole( ConsoleThread *pThread )
     mConsoleMutex.lock();
         mConsoleServices.append( pThread );
     mConsoleMutex.unlock();
-
+logDbg()<<mConsoleServices.size();
     //! console
     connect( pThread, SIGNAL(signal_clean(ConsoleThread*)),
              this, SLOT(slot_console_clean(ConsoleThread*)) );
@@ -93,6 +98,20 @@ void MAppServer::disconnectConsole( ConsoleThread *pThread )
     mConsoleMutex.lock();
         mConsoleServices.removeAll( pThread );
         logDbg()<<mConsoleServices.size();
+    mConsoleMutex.unlock();
+}
+
+void MAppServer::stopWorkings()
+{
+    mWorkingMutex.lock();
+        foreach( WorkingThread *pThread, mWorkings )
+        { pThread->requestInterruption(); }
+    mWorkingMutex.unlock();
+
+    mConsoleMutex.lock();
+        logDbg()<<mConsoleServices.size();
+        foreach( ConsoleThread *pThread, mConsoleServices )
+        { pThread->requestInterruption(); }
     mConsoleMutex.unlock();
 }
 

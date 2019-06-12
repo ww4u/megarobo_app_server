@@ -3,16 +3,16 @@
 
 #include "../mydebug.h"
 #include "MegaGateway.h"
-
+#include "../syspara.h"
 MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
 {
 
 #ifndef _RASPBERRY
 //    mAddr = "TCPIP0::192.168.1.54::inst0::INSTR";        //! descriptor in case sensitive
-//    mAddr = "TCPIP0::192.168.1.122::inst0::INSTR";        //! descriptor in case sensitive
-//    mAddr = "TCPIP0::192.168.1.151::inst0::INSTR";        //! descriptor in case sensitive
-//    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";        //! descriptor in case sensitive
-    mAddr = "TCPIP0::192.168.1.160::inst0::INSTR";
+//    mAddr = "TCPIP0::192.168.1.122::inst0::INSTR";
+    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";
+//    mAddr = "TCPIP0::192.168.1.160::inst0::INSTR";
+//    mAddr = "TCPIP0::192.168.1.231::inst0::INSTR";
 #else
     mAddr = "TCPIP0::127.0.0.1::inst0::INSTR";
 #endif
@@ -87,6 +87,18 @@ int MRX_T4Server::open()
         }
         mDeviceHandle = deviceHandles[0];
 
+        //! \note get sn
+        char sns[128];
+        ret = mrgGetDeviceSerialNumber( mVi, mDeviceHandle, sns );
+        if ( ret != 0 )
+        {
+            ret = -4;
+            break;
+        }
+        mDeviceSNs.append( sns );
+        mSn = mDeviceSNs.at( 0 );
+        logDbg()<<mDeviceSNs;
+
         //! \todo update para
         char idns[128];
         ret = mrgGateWayIDNQuery( mVi, idns );
@@ -98,9 +110,23 @@ int MRX_T4Server::open()
             if ( idnList.size() < 4 )
             { return -1; }
 
-            mSn = idnList.at( 2 );
             logDbg()<<strIdns;
-            logDbg()<<mSn;
+        }
+
+        int dataUpdate = 1;
+        if ( sysHasArg("-upload") )
+        { dataUpdate = 1; }
+        else
+        { dataUpdate = 0; }
+
+        //! open sg/se
+        for ( int i = 0; i < 5; i++ )
+        {
+            ret = mrgMRQReportState( mVi, mDeviceHandle, i, 0, dataUpdate );
+            if ( ret != 0 )
+            {
+                break;
+            }
         }
 
     }while( 0 );

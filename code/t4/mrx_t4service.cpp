@@ -68,31 +68,6 @@ if ( NULL == _pLocalServer )\
 
 MRX_T4Service::MRX_T4Service( qintptr ptr, quint16 port, QObject *parent ) : MAppService( ptr, port, parent )
 {
-    //! fill map
-//    mProcMap.insert( QString("step"), (MAppService::P_PROC)&MRX_T4Service::on_step_proc);
-
-    attachProc( QString("ack"), (api_type)&api_class::on_ack_proc );
-    attachProc( QString("step"), (api_type)&api_class::on_step_proc, 500 );
-    attachProc( QString("joint_step"), (api_type)&api_class::on_joint_step_proc, 500 );
-    attachProc( QString("action"), (api_type)&api_class::on_action_proc );
-
-    attachProc( QString("indicator"), (api_type)&api_class::on_indicator_proc);
-    attachProc( QString("add"), (api_type)&api_class::on_add_proc);
-    attachProc( QString("query"), (api_type)&api_class::on_query_proc);
-    attachProc( QString("link_status"), (api_type)&api_class::on_link_status_proc);
-
-    attachProc( QString("config"), (api_type)&api_class::on_config_proc);
-
-    attachProc( QString("alignj"), (api_type)&api_class::on_alignj_proc );
-    attachProc( QString("movej"), (api_type)&api_class::on_movej_proc );
-    attachProc( QString("move"), (api_type)&api_class::on_move_proc );
-    attachProc( QString("movel"), (api_type)&api_class::on_movel_proc );
-
-    attachProc( QString("setio"), (api_type)&api_class::on_setio );
-    attachProc( QString("getio"), (api_type)&api_class::on_getio );
-
-    attachProc( QString("execute"), (api_type)&api_class::on_execute );
-
     m_pWorkingThread = new WorkingThread();
     Q_ASSERT( NULL != m_pWorkingThread );
 }
@@ -122,6 +97,29 @@ void MRX_T4Service::attachServer( MAppServer *pServer )
 
     //! link the working
     pServer->connectWorking( m_pWorkingThread );
+
+    //! fill map
+    attachProc( QString("ack"), (api_type)&api_class::on_ack_proc, &pServer->mQueryFifoMutex );
+    attachProc( QString("step"), (api_type)&api_class::on_step_proc, &pServer->mQueryFifoMutex, 500 );
+    attachProc( QString("joint_step"), (api_type)&api_class::on_joint_step_proc, &pServer->mQueryFifoMutex, 500 );
+    attachProc( QString("action"), (api_type)&api_class::on_action_proc, &pServer->mQueryFifoMutex );
+
+    attachProc( QString("indicator"), (api_type)&api_class::on_indicator_proc, &pServer->mQueryFifoMutex);
+    attachProc( QString("add"), (api_type)&api_class::on_add_proc, &pServer->mQueryFifoMutex);
+    attachProc( QString("query"), (api_type)&api_class::on_query_proc, &pServer->mQueryFifoMutex);
+    attachProc( QString("link_status"), (api_type)&api_class::on_link_status_proc, &pServer->mQueryFifoMutex);
+
+    attachProc( QString("config"), (api_type)&api_class::on_config_proc, &pServer->mQueryFifoMutex);
+
+    attachProc( QString("alignj"), (api_type)&api_class::on_alignj_proc, &pServer->mQueryFifoMutex );
+    attachProc( QString("movej"), (api_type)&api_class::on_movej_proc, &pServer->mQueryFifoMutex );
+    attachProc( QString("move"), (api_type)&api_class::on_move_proc, &pServer->mQueryFifoMutex );
+    attachProc( QString("movel"), (api_type)&api_class::on_movel_proc, &pServer->mQueryFifoMutex );
+
+    attachProc( QString("setio"), (api_type)&api_class::on_setio, &pServer->mQueryFifoMutex );
+    attachProc( QString("getio"), (api_type)&api_class::on_getio, &pServer->mQueryFifoMutex );
+
+    attachProc( QString("execute"), (api_type)&api_class::on_execute, &pServer->mQueryFifoMutex );
 }
 
 int MRX_T4Service::_on_preProc( QJsonDocument &doc )
@@ -168,10 +166,6 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     deload_double( z );
     deload_bool( continous );
 
-    //! \note
-    //! \todo
-    var.continous = false;
-
     //! deparse the x/y/z
     double lx, ly, lz;
     if ( var.continous )
@@ -213,13 +207,14 @@ int MRX_T4Service::post_on_step_proc(  QJsonDocument &doc )
     //! \note no move on
     if ( var.continous )
     {
+        //! \note no speed ratio
         localRet = mrgRobotMoveOn( local_vi(),
                                    robot_handle(),
                                    wave_table,
                                    lx,
                                    ly,
                                    lz,
-                                   pLocalServer->mMaxBodySpeed * pLocalServer->localSpeedRatio() );
+                                   pLocalServer->mMaxBodySpeed  );
     }
     else
     {
@@ -342,7 +337,8 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         Q_ASSERT( NULL != m_pWorkingThread );
         if ( m_pWorkingThread->isRunning() )
         {
-            m_pWorkingThread->requestInterruption();
+            //! \note all workings
+            _pLocalServer->stopWorkings();
 
             //! \note force stop
             localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
@@ -356,8 +352,10 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
     {
         //! \todo
         //! stop the mission thread
-        Q_ASSERT( NULL != m_pWorkingThread );
-        m_pWorkingThread->requestInterruption();
+//        Q_ASSERT( NULL != m_pWorkingThread );
+//        m_pWorkingThread->requestInterruption();
+
+        _pLocalServer->stopWorkings();
 
         //! \note force stop
         localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
@@ -374,10 +372,15 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
     else if ( var.item == "stop" )
 
     {
+        _pLocalServer->stopWorkings();
+
         localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
 
-        Q_ASSERT( NULL != m_pWorkingThread );
-        m_pWorkingThread->requestInterruption();
+//        Q_ASSERT( NULL != m_pWorkingThread );
+//        m_pWorkingThread->requestInterruption();
+
+        //! \errant wait for end
+        localRet = mrgRobotWaitEnd( local_vi(), robot_handle(), wave_table, 100 );
 
         ack_raw_status();
 
@@ -387,10 +390,12 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
     //! 2. post package
     else if ( var.item == "package" )
     {
+        _pLocalServer->stopWorkings();
+
         localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
 
-        Q_ASSERT( NULL != m_pWorkingThread );
-        m_pWorkingThread->requestInterruption();
+//        Q_ASSERT( NULL != m_pWorkingThread );
+//        m_pWorkingThread->requestInterruption();
     }
     else if ( var.item == "stopmove" )
     {
@@ -558,11 +563,11 @@ int MRX_T4Service::on_query_proc(  QJsonDocument &doc )
     }
     else if ( var.item == "ctorque" )
     {
-        //! \todo
+        query_( on_ctorque_proc );
     }
     else if ( var.item == "ccurrent" )
     {
-        //! \todo
+        query_( on_ccurrent_proc );
     }
     else
     { }
@@ -606,7 +611,7 @@ int MRX_T4Service::on_device_status_proc( QJsonDocument &doc )
     Q_ASSERT( NULL != m_pServer );
     //! if the bg thread is running or the device is running
     if ( m_pServer->status() == MAppServer::state_working )
-    { var.status = "running"; logDbg(); }
+    { var.status = "running"; logDbg()<<m_pServer->workings(); }
     else
     {logDbg();
         return on_device_status_raw_proc( doc );
@@ -791,13 +796,72 @@ int MRX_T4Service::on_cjoint_proc( QJsonDocument &doc )
         }
     }
 
-    obj.insert( "j1", angles[0] );
-    obj.insert( "j2", angles[1] );
-    obj.insert( "j3", angles[2] );
-    obj.insert( "j4", angles[3] );
+    //! \note align to zero
+    obj.insert( "j1", angles[0] - 0 );
+    obj.insert( "j2", angles[1] - 180 );
+    obj.insert( "j3", angles[2] - 90 );
+    obj.insert( "j4", angles[3] - 90 );
 
     //! \todo the hand angle
     obj.insert( "j5", angles[5] );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
+int MRX_T4Service::on_ctorque_proc( QJsonDocument &doc )
+{
+    pre_def( Intfpose );
+
+    quint32 datas[ 5 ];
+    qint32 val;
+
+    for ( int i = 0 ; i < 5; i++ )
+    {
+        localRet = mrgMRQReportData_Query( local_vi(),
+                             device_handle(),
+                             i,
+                             0,
+                             datas + i );
+        if ( localRet != 1 )
+        { return -1; }
+    }
+
+    for ( int i = 0; i < sizeof_array( datas); i++ )
+    {
+        val = (qint32)( (datas[i]>> 8 ) & 0xff );
+        obj.insert( QString("j%1").arg(i+1), val );
+    }
+
+    doc.setObject( obj );
+
+    return 0;
+}
+int MRX_T4Service::on_ccurrent_proc( QJsonDocument &doc )
+{
+    pre_def( Intfpose );
+
+    quint32 datas[ 5 ];
+    qint32 val;
+
+    for ( int i = 0 ; i < 5; i++ )
+    {
+        localRet = mrgMRQReportData_Query( local_vi(),
+                             device_handle(),
+                             i,
+                             0,
+                             datas + i );
+
+        if ( localRet != 1 )
+        { return -1; }
+    }
+
+    for ( int i = 0; i < sizeof_array( datas ); i++ )
+    {
+        val = (qint32)( datas[i] & 0xff);
+        obj.insert( QString("j%1").arg(i+1), val );
+    }
 
     doc.setObject( obj );
 
@@ -1460,28 +1524,40 @@ int MRX_T4Service::on_execute( QJsonDocument &doc )
 {
     pre_def(IntfExecute);
 
-    post_call( on_execute );
-
-    return 0;
+    //! \note exec now for e_stop in next step
+    return post_on_execute( doc );
 }
 int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 {
     pre_def(IntfExecute);
 
+    try_deload_string( script );
+    try_deload_string( shell );
+
+    if ( _has_item(script) )
+    {
+        localRet = post_on_execute_script( doc );
+    }
+    else if ( _has_item(shell) )
+    {
+        localRet = post_on_execute_shell( doc );
+    }
+    else
+    { return -1; }
+
+    return localRet;
+}
+
+int MRX_T4Service::post_on_execute_script( QJsonDocument &doc )
+{
+    pre_def(IntfExecute);
+
     deload_string( script );
 
-    QString curPath = QDir::currentPath();
-
     //! try the path
-    QString wp = qApp->applicationDirPath() + "/execute/megarobo";
-    QDir dir( wp );
-    if ( dir.exists() )
-    { QDir::setCurrent( wp ); }
-    else
-    { QDir::setCurrent("G:/study/py/megarobo"); }
+    switch_shell_dir();
 
     QString scriptFile = "scrpt.mrl";
-
     QFile file( scriptFile );
     if ( file.open( QIODevice::WriteOnly ) )
     {}
@@ -1492,7 +1568,38 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 
     file.close();
 
+    localRet = run_shell( scriptFile );
 
+    return localRet;
+}
+
+int MRX_T4Service::post_on_execute_shell( QJsonDocument &doc )
+{
+    pre_def(IntfExecute);
+
+    deload_string( shell );
+
+    switch_shell_dir();
+
+    localRet = run_shell( var.shell );
+
+    return localRet;
+}
+
+void MRX_T4Service::switch_shell_dir()
+{
+    //! try the path
+    QString wp = qApp->applicationDirPath() + "/execute/megarobo";
+    QDir dir( wp );
+    if ( dir.exists() )
+    { QDir::setCurrent( wp ); }
+    else
+    { QDir::setCurrent("G:/study/py/megarobo"); }
+}
+
+int MRX_T4Service::run_shell( const QString &scriptFile )
+{
+    check_connect();
 
 #ifdef _WIN32
     QString cmd="cmd";
@@ -1511,11 +1618,13 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 
     _pLocalServer->connectConsole( pConsoleThread );
 
+    connnectConsoleWorkings( pConsoleThread );
+
     pConsoleThread->start();
 
     logDbg();
 
-    return localRet;
+    return 0;
 }
 
 int MRX_T4Service::rawStatus( QString &status )

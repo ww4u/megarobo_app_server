@@ -61,6 +61,7 @@ if ( NULL == _pLocalServer )\
 
 class MAppServer;
 class WorkingThread;
+class ConsoleThread;
 class ProxyApi;
 
 class MServiceEvent : public QEvent
@@ -120,11 +121,16 @@ public:
     void continueNext();
     bool isPending();
 
+public:
+    void connnectConsoleWorkings( ConsoleThread *p );
+    void disconnectConsoleWorkings( ConsoleThread *p );
+    void stopConsoleWorkings();
+
 protected:
     void postEvent( int tpe, QVariant v1=0, QVariant v2=0, QVariant v3=0 );
 
 protected:
-    int attachProc( const QString &name, MAppService::P_PROC proc, quint64 tmo = 0 );
+    int attachProc( const QString &name, MAppService::P_PROC proc, QMutex *pMutex=NULL, quint64 tmo = 0 );
 
     void dataProc( );
 
@@ -161,6 +167,9 @@ protected:
 
     WorkingThread *m_pWorkingThread;
 
+    QMutex mConsoleMutex;
+    QList< ConsoleThread *> mConsoleWorkings;
+
     QTimer *m_pTimer;
     bool mbTmo;
     int mTimeout;
@@ -185,6 +194,8 @@ public slots:
 
     void slot_on_socket_error( QAbstractSocket::SocketError err );
     void slot_on_socket_disconnect();
+
+    void slot_console_clean( ConsoleThread *pThread );
 
 };
 
@@ -235,6 +246,8 @@ class ProxyApi
 public:
     MAppService *m_pObj;
 
+    QMutex *m_pMutex;
+
     MAppService::P_PROC m_pPreProc;
 
     MAppService::P_PROC m_pProc;
@@ -251,6 +264,7 @@ public:
     ProxyApi()
     {
         m_pObj = NULL;
+        m_pMutex = NULL;
         m_pProc = NULL;
 
         m_pPreProc = NULL;

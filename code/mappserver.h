@@ -38,6 +38,8 @@ public:
     int services();
     void registerService( QThread *pService );
 
+    int workings();
+
     //! interrupt
     virtual void interrupt( const QByteArray &ary );
 
@@ -48,6 +50,7 @@ public:
     void connectConsole( ConsoleThread *pThread );
     void disconnectConsole( ConsoleThread *pThread );
 
+    void stopWorkings();
 signals:
 
 protected Q_SLOTS:
@@ -66,6 +69,9 @@ protected:
 
     QMutex mConsoleMutex;
     QList<ConsoleThread*> mConsoleServices;
+
+public:
+    QMutex mQueryFifoMutex;
 
 };
 

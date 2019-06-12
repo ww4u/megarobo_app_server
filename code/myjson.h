@@ -21,6 +21,10 @@
 
 #define _deload_string( obj, item )   _try_deload_xx( obj, item, String, "" )\
                                      else{ return -1; }
+
+#define _try_deload_string( obj, item )   _try_deload_xx( obj, item, String, "" )\
+                                     else{ var.bmMap.insert( #item, false); }
+
 #define _deload_int( obj, item )    _try_deload_xx( obj, item, Int, 0 )\
                                     else{ return -1; }
 #define _deload_bool( obj, item )    _try_deload_xx( obj, item, Bool, false )\
@@ -44,6 +48,7 @@
 
 
 #define deload_string( item )   _deload_string( obj, item )
+#define try_deload_string( item )   _try_deload_string( obj, item )
 
 #define deload_int2s( item1, item2 )      _deload_int( obj, item1 )\
                                             _deload_int( obj, item2 )
