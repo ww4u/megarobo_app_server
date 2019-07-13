@@ -74,6 +74,9 @@ void MRX_T4Service::attachServer( MAppServer *pServer )
 
     attachProc( QString("config"), (api_type)&api_class::on_config_proc, &pServer->mQueryFifoMutex);
 
+    attachProc( QString("file"), (api_type)&api_class::on_file_proc, &pServer->mQueryFifoMutex);
+    attachProc( QString("dir"), (api_type)&api_class::on_dir_proc, &pServer->mQueryFifoMutex);
+
     attachProc( QString("alignj"), (api_type)&api_class::on_alignj_proc, &pServer->mQueryFifoMutex );
     attachProc( QString("movej"), (api_type)&api_class::on_movej_proc, &pServer->mQueryFifoMutex );
     attachProc( QString("move"), (api_type)&api_class::on_move_proc, &pServer->mQueryFifoMutex );
@@ -394,26 +397,21 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
             _pLocalServer->stopWorkings();
 
             //! \note force stop
-            localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+            localRet = mrgSysSetEmergencyStopState( local_vi(), 1 );
 
-            localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+            localRet = mrgSysSetEmergencyStopState( local_vi(), 0 );
         }
         else
         {}
     }
     else if ( var.item == "emergency_stop" )
     {
-        //! \todo
-        //! stop the mission thread
-//        Q_ASSERT( NULL != m_pWorkingThread );
-//        m_pWorkingThread->requestInterruption();
-
         _pLocalServer->stopWorkings();
 
         //! \note force stop
-        localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+        localRet = mrgSysSetEmergencyStopState( local_vi(), 1 );
 
-        localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+        localRet = mrgSysSetEmergencyStopState( local_vi(), 0 );
 
         //! \errant wait for end
         localRet = mrgRobotWaitEnd( local_vi(), robot_handle(), wave_table, 100 );
@@ -428,9 +426,6 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
         _pLocalServer->stopWorkings();
 
         localRet = mrgRobotStop( local_vi(), robot_handle(), wave_table );
-
-//        Q_ASSERT( NULL != m_pWorkingThread );
-//        m_pWorkingThread->requestInterruption();
 
         //! \errant wait for end
         localRet = mrgRobotWaitEnd( local_vi(), robot_handle(), wave_table, 100 );
@@ -1225,6 +1220,293 @@ int MRX_T4Service::on_config_proc_q(  QJsonDocument &doc )
     return 0;
 }
 
+int MRX_T4Service::on_file_proc( QJsonDocument &doc )
+{
+    pre_def( IntfFile );
+
+    deload_string( action );
+    if ( var.action == "write" )
+    { do_query_(on_file_write); }
+    else if ( var.action == "read" )
+    { do_query_(on_file_read); }
+    else if ( var.action == "delete" )
+    { do_query_(on_file_delete); }
+    else if ( var.action == "size" )
+    { do_query_(on_file_size); }
+    else
+    { }
+
+    return localRet;
+}
+
+int MRX_T4Service::on_file_write( QJsonDocument &doc )
+{
+    pre_def( IntfFile );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( contents );
+    deload_string( action );
+
+    QFile file( m_pServer->homePath() + "/" + var.name );
+    if ( !file.open( QIODevice::WriteOnly ) )
+    { var.ret = -1; }
+    else
+    {
+        int len = var.contents.toLatin1().size();
+        if ( len != file.write( var.contents.toLatin1() ) )
+        { var.ret = -1; }
+        else
+        { var.ret = 0; }
+
+        file.close();
+    }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_file_read( QJsonDocument &doc )
+{
+    pre_def( IntfFile );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+    QFile file( m_pServer->homePath() + "/" + var.name );
+    if ( !file.open( QIODevice::ReadOnly ) )
+    { var.ret = -1; }
+    else
+    {
+        var.contents = file.readAll();
+        file.close();
+        var.ret = 0;
+    }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_file_delete( QJsonDocument &doc )
+{
+    pre_def( IntfFile );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+
+    QFile file( m_pServer->homePath()+"/" + var.name );
+    if ( file.remove() )
+    { var.ret = 0; }
+    else
+    { var.ret = -1; }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_file_size( QJsonDocument &doc )
+{
+    pre_def( IntfFile );
+
+    int fSize = 0;
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+    QFile file( m_pServer->homePath() + "/" + var.name );
+    if ( !file.open(QIODevice::ReadOnly ) )
+    {
+        var.ret = -1;
+    }
+    else
+    {
+        fSize = file.size();
+        file.close();
+        var.ret = 0;
+    }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+//    json_obj( contents );
+    obj.insert( "contents", fSize );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+
+    return 0;
+}
+
+int MRX_T4Service::on_dir_proc( QJsonDocument &doc )
+{
+    pre_def( IntfDir );
+
+    deload_string( action );
+    if ( var.action == "create" )
+    { do_query_(on_dir_create); }
+    else if ( var.action == "delete" )
+    { do_query_(on_dir_delete); }
+    else if ( var.action == "size" )
+    { do_query_(on_dir_size); }
+    else if ( var.action == "list" )
+    { do_query_(on_dir_list); }
+    else
+    { }
+
+    return localRet;
+}
+
+int MRX_T4Service::on_dir_create( QJsonDocument &doc )
+{
+    pre_def( IntfDir );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+
+    QString path = m_pServer->homePath() + "/" + var.name;
+    QDir dir( path );
+    if ( dir.exists() )
+    { var.ret = 0; }
+    else
+    {}
+
+    if ( dir.mkpath(path) )
+    { var.ret = 0; }
+    else
+    { var.ret = -1; }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+//    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_dir_delete( QJsonDocument &doc )
+{
+    pre_def( IntfDir );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+
+    QString path = m_pServer->homePath() + "/" + var.name;
+    QDir dir( path );
+
+    if ( dir.removeRecursively() )
+    { var.ret = 0; }
+    else
+    { var.ret = -1; }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+//    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_dir_size( QJsonDocument &doc )
+{
+    pre_def( IntfDir );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+
+    QString path = m_pServer->homePath() + "/" + var.name;
+    QDir dir( path );
+
+    int dirSize = 0;
+    QFileInfoList infoList;
+    if ( dir.exists() )
+    {
+        infoList = dir.entryInfoList();
+        var.ret = 0;
+        dirSize = infoList.size();
+    }
+    else
+    { var.ret = -1; }
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+
+    obj.insert( "contents", dirSize );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+int MRX_T4Service::on_dir_list( QJsonDocument &doc )
+{
+    pre_def( IntfDir );
+
+    deload_string( command );
+    deload_string( name );
+    deload_string( action );
+
+    QString path = m_pServer->homePath() + "/" + var.name;
+    QDir dir( path );
+
+    QFileInfoList infoList;
+    infoList = dir.entryInfoList();
+
+    //! for the info list
+    QJsonArray infoAry;
+    for ( int i = 0; i < infoList.size(); i++ )
+    {
+        QJsonObject infoObj;
+
+        infoObj.insert( "name", infoList.at(i).fileName() );
+        infoObj.insert( "type", infoList.at(i).isFile() ? "file":"dir" );
+        infoObj.insert( "size", infoList.at(i).size() );
+        infoObj.insert( "ts", infoList.at(i).lastModified().toString() );
+
+        infoAry.append( infoObj );
+    }
+
+    obj.insert( "contents", infoAry );
+
+    var.ret = 0;
+
+    json_obj( command );
+    json_obj( name );
+    json_obj( action );
+//    json_obj( contents );
+
+    json_obj( ret );
+
+    doc.setObject( obj );
+    return 0;
+}
+
 int MRX_T4Service::on_alignj_proc( QJsonDocument &doc )
 {
     pre_def( IntfAlignj );
@@ -1307,6 +1589,13 @@ int MRX_T4Service::post_on_movej_proc( QJsonDocument &doc )
 {
     pre_def( IntfMovej );
 
+    //! init
+    var.j1 = 0;
+    var.j2 = 0;
+    var.j3 = 0;
+    var.j4 = 0;
+    var.j5 = 0;
+
     try_deload_double( j1 );
     try_deload_double( j2 );
     try_deload_double( j3 );
@@ -1314,26 +1603,59 @@ int MRX_T4Service::post_on_movej_proc( QJsonDocument &doc )
     try_deload_double( j5 );
 
     try_deload_double( a );
-    deload_double( v );
+    try_deload_double( v );
     try_deload_double( t );
 
-    float angles[16] = {0};
-    localRet = mrgGetRobotJointAngle( local_vi(),
-                                  robot_handle(),
-                                  -1,
-                                  angles );
-    if ( localRet != 5 )
+    //! check a, v, t
+    if ( _has_item(v) || _has_item(t) )
+    {}
+    else
     { return -1; }
 
-    float dist,t;
+    //! check contents
+    if ( _has_item(j1) || _has_item(j2) || _has_item(j3) || _has_item(j4) || _has_item(j5) )
+    {
+        //! guess the max angle
+        double angle = qMax( qAbs(var.j1), qAbs(var.j2) );
+        angle = qMax( qAbs(var.j3), angle );
+        angle = qMax( qAbs(var.j4), angle );
+        angle = qMax( qAbs(var.j5), angle );
 
-    move_sub_joint( 0, j1 );
-    move_sub_joint( 1, j2 );
-    move_sub_joint( 2, j3 );
-    move_sub_joint( 3, j4 );
+        do
+        {
+            if ( angle < FLT_EPSILON )
+            { break; }
 
-    move_sub_joint( 4, j5 );
+            float rt;
+            if ( _has_item(t) )
+            {
+                rt = var.t;
+            }
+            else if ( _has_item(v) )
+            {
+                rt = angle / qAbs(var.v);
+            }
+            else
+            { return -1; }
 
+            //! check t
+            if ( rt < FLT_EPSILON )
+            { return -1; }
+
+            float angles[5]={ var.j1, var.j2, var.j3, var.j4, var.j5 };
+
+            localRet = mrgRobotMoveJ( local_vi(),
+                                      robot_handle(),
+                                      angles,
+                                      rt,
+                                      5,
+                                      guessTmoT( 0, angle, rt )
+                                      );
+
+            if ( localRet != 0 )
+            { return localRet; }
+        }while( 0 );
+    }
     return 0;
 }
 
@@ -1480,17 +1802,22 @@ int MRX_T4Service::on_seto( QJsonDocument &doc )
     else
     { return localRet; }
 
-    //! setio
+    //! check port
     for ( int i = 0; i < var.ports.size(); i++ )
     {
-        localRet = mrgProjectIOSet( local_vi(),
-                                      (IOSET_INDEX)var.ports.at(i),
-                                      var.value );
-        if ( localRet != 0 )
-        { return localRet; }
+        if ( var.ports.at(i) < IOSET_Y1 || var.ports.at(i) > IOSET_Y4 )
+        { logDbg();return -1; }
     }
 
-    return 0;
+    qint32 mask = 0;
+    for ( int i = 0; i < var.ports.size(); i++ )
+    {
+        mask |= 1<<var.ports.at(i);
+    }
+
+    localRet = mrgProjectIOSet( local_vi(), IOSET_ALL, var.value, mask );
+    return localRet;
+
 }
 
 int MRX_T4Service::on_getio( QJsonDocument &doc )
@@ -1534,23 +1861,22 @@ int MRX_T4Service::on_getio( QJsonDocument &doc )
 
     return localRet;
 }
+
+//! di: 1,2,3,4,5,,,10
 int MRX_T4Service::on_getdi( QJsonDocument &doc, QList<int> &ports )
 {
     pre_def( IntfDIOs );
 
-    //! \todo not all index
-    //! get all di
-//    quint32 dis;
-    char dis;
-    localRet = mrgProjectIOGet( local_vi(), (IOGET_INDEX)0, &dis );
-    if ( localRet < 0 )
-    { return localRet; }
-
-    //! return the need
+    //! check port
     for ( int i = 0; i < ports.size(); i++ )
     {
-        var.value.append( ( dis >> ( ports.at(i)-1 ) ) & 0x01 );
+        if ( ports.at(i) < IOGET_X1 || ports.at(i) > IOGET_X10 )
+        { return -1; }
     }
+
+    localRet = _getio( doc, ports, IOGET_X1, var.value );
+    if ( localRet != 0 )
+    { return localRet; }
 
     //! export
     obj.insert("command", "getdi" );
@@ -1560,30 +1886,63 @@ int MRX_T4Service::on_getdi( QJsonDocument &doc, QList<int> &ports )
 
     return 0;
 }
+
+//! :1,2,3,4
 int MRX_T4Service::on_getdo( QJsonDocument &doc, QList<int> &ports )
 {
-    //! \todo get do
-
     pre_def( IntfDIOs );
 
-    //! get all di
-//    quint32 dis;
-    char dis;
-    localRet = mrgProjectIOGet( local_vi(), (IOGET_INDEX)0, &dis );
-    if ( localRet < 0 )
-    { return localRet; }
-
-    //! return the need
+    //! check port
     for ( int i = 0; i < ports.size(); i++ )
     {
-        var.value.append( ( dis >> ( ports.at(i)-1 ) ) & 0x01 );
+        if ( ports.at(i) < (IOGET_Y1 - IOGET_Y1 + 1) || ports.at(i) > (IOGET_Y4 - IOGET_Y1 + 1) )
+        { return -1; }
     }
+
+    localRet = _getio( doc, ports, IOGET_Y1, var.value );
+    if ( localRet != 0 )
+    { return localRet; }
 
     //! export
     obj.insert("command", "getdo" );
     export_list( value );
 
     doc.setObject( obj );
+
+    return 0;
+}
+
+int MRX_T4Service::_getio( QJsonDocument &doc, QList<int> &ports, int from, QList<int> &portVals )
+{
+    pre_def( IntfDIOs );
+
+    //! get all di
+    char diostat[128];
+    localRet = mrgProjectIOGet( local_vi(), IOGET_ALL, diostat );
+    if ( localRet < 0 )
+    { return localRet; }
+
+    //! convert the dis to value
+    quint32 dis = 0;
+    QString str = diostat;
+    QStringList strList = str.split(',', QString::SkipEmptyParts );
+    foreach( QString sub, strList )
+    {
+        if ( sub == "H" )
+        { dis |= 1; }
+        else if ( sub == "L" )
+        { dis |= 0; }
+        else
+        { }
+
+        dis <<= 1;
+    }
+
+    //! return the need
+    for ( int i = 0; i < ports.size(); i++ )
+    {
+        portVals.append( ( dis >> ( ports.at(i)-(int)from ) ) & 0x01 );
+    }
 
     return 0;
 }
@@ -1601,6 +1960,7 @@ int MRX_T4Service::post_on_execute( QJsonDocument &doc )
 
     try_deload_string( script );
     try_deload_string( shell );
+    try_deload_string( args );
 
     if ( _has_item(script) )
     {
@@ -1636,7 +1996,7 @@ int MRX_T4Service::post_on_execute_script( QJsonDocument &doc )
 
     file.close();
 
-    localRet = run_shell( scriptFile );
+    localRet = run_shell( scriptFile, var.args.split(" ") );
 
     return localRet;
 }
@@ -1646,10 +2006,11 @@ int MRX_T4Service::post_on_execute_shell( QJsonDocument &doc )
     pre_def(IntfExecute);
 
     deload_string( shell );
+    try_deload_string( args );
 
     switch_shell_dir();
 
-    localRet = run_shell( var.shell );
+    localRet = run_shell( var.shell, var.args.split(" ") );
 
     return localRet;
 }
@@ -1665,7 +2026,7 @@ void MRX_T4Service::switch_shell_dir()
     { QDir::setCurrent("G:/study/py/megarobo"); }
 }
 
-int MRX_T4Service::run_shell( const QString &scriptFile )
+int MRX_T4Service::run_shell( const QString &scriptFile, const QStringList &args )
 {
     check_connect();
 
@@ -1680,7 +2041,7 @@ int MRX_T4Service::run_shell( const QString &scriptFile )
 #endif
 
     //! start console thread
-    ConsoleThread *pConsoleThread = new ConsoleThread( cmd, argList );
+    ConsoleThread *pConsoleThread = new ConsoleThread( cmd, argList, args );
     if ( NULL == pConsoleThread )
     { return -1; }
 
@@ -1721,6 +2082,13 @@ int MRX_T4Service::rawStatus( QString &status )
     return localRet;
 }
 
+#define STATE_DELAY_TIME    1000
+#define WORKING_TIME_OUT    5000
+int MRX_T4Service::guessTmoT( int joint, float angle, float t )
+{
+    return t * 1000 + STATE_DELAY_TIME + WORKING_TIME_OUT;
+}
+
 int MRX_T4Service::guessTmo( int joint, float dist, float speed )
 {
     Q_ASSERT ( qAbs(speed) > FLT_EPSILON );
@@ -1730,7 +2098,7 @@ int MRX_T4Service::guessTmo( int joint, float dist, float speed )
     if ( t < FLT_EPSILON )
     { return 1000; }
 
-    return 60 * t *1000;
+    return t *1000 + STATE_DELAY_TIME + WORKING_TIME_OUT;
 }
 
 int MRX_T4Service::guessTTmo( float x, float y, float z,

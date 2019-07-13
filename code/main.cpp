@@ -18,6 +18,8 @@
 //! -logoutput
 //! -loginput
 //! -showin
+//! -let
+//! -mega
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -35,19 +37,32 @@ int main(int argc, char *argv[])
     int ret;
 
     //! servers
-    MRX_T4Server server( 50000, 2 );
+    MAppServer *pServer;
+    if ( sysHasArg("-let") )
+    {
+        pServer = new Let_Server(2345);
+    }
+    else
+    {
+        pServer = new MRX_T4Server( 50000, 2 );
+    }
+    if ( NULL == pServer )
+    {
+        logDbg()<<"fail to new";
+        return -1;
+    }
 
-//    Let_Server server( 2345 );
-
-    ret = server.start();
+    pServer->start();
     logDbg()<<ret;
     do
     {
-        ret = server.open();
+        ret = pServer->open();
         QThread::msleep( 100 );
     }while( ret != 0 );
 
     ret = a.exec();
+
+    delete pServer;
 
     return ret;
 }

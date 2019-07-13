@@ -16,6 +16,13 @@
 
 #define api_type    MAppService::P_PROC
 
+#define do_query_( proc )  {\
+                        localRet = proc( doc );\
+                        if ( localRet != 0 )\
+                        { return localRet; }\
+                        \
+                        output( doc ); }
+
 #define query_( proc )  { QJsonDocument localDoc;\
                         localRet = proc( localDoc );\
                         if ( localRet != 0 )\
@@ -235,7 +242,10 @@ class ConsoleThread : public QThread
 {
     Q_OBJECT
 public:
-    ConsoleThread( QString &prog, QStringList &args, QObject *parent = nullptr );
+    ConsoleThread( const QString &prog,
+                   const QStringList &args,
+                   const QStringList &shellArg,
+                   QObject *parent = nullptr );
     virtual ~ConsoleThread();
 
 Q_SIGNALS:
@@ -247,6 +257,7 @@ protected:
 protected:
     QString mProg;
     QStringList mArgs;
+    QStringList mShellArg;
 };
 
 class ProxyApi

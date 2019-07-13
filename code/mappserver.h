@@ -35,6 +35,12 @@ public:
     virtual void on_dislink();
     virtual bool isLinked();
 
+    void setSendEOP( const QString &eop );
+    QString sendEOP();
+
+    void setRecvEOP( const QString &eop );
+    QString recvEOP();
+
     int services();
     void registerService( QThread *pService );
 
@@ -44,6 +50,12 @@ public:
     virtual void interrupt( const QByteArray &ary );
 
 public:
+    void setServerName( const QString &name );
+    QString serverName();
+
+    bool assureHomePath();
+    QString homePath();
+
     void connectWorking( WorkingThread *pWorking );
     void disconnectWorking( WorkingThread *pWorking );
 
@@ -58,6 +70,8 @@ protected Q_SLOTS:
     void slot_console_clean( ConsoleThread *pThread );
 
 protected:
+    QString mServerName;
+
     QList< MTcpServer *> mTcpServers;
     QList< quint16 > mPorts;
 
@@ -69,6 +83,8 @@ protected:
 
     QMutex mConsoleMutex;
     QList<ConsoleThread*> mConsoleServices;
+
+    QString mSendEOP, mRecvEOP;
 
 public:
     QMutex mQueryFifoMutex;

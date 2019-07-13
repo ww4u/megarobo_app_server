@@ -155,10 +155,10 @@ int Let_Service::on_action_eStop( QJsonDocument &doc )
 
     clearContinue();
 
-    localRet = mrgSysSetEmergencyStop( local_vi(), 1 );
+    localRet = mrgSysSetEmergencyStopState( local_vi(), 1 );
     check_local_ret();
 
-    localRet = mrgSysSetEmergencyStop( local_vi(), 0 );
+    localRet = mrgSysSetEmergencyStopState( local_vi(), 0 );
     check_local_ret();
 
     return 0;

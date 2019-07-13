@@ -8,6 +8,10 @@ MAppServer::MAppServer( int portBase, int cnt, QObject *parent) : QObject( paren
     {
         mPorts<<(portBase+i);
     }
+
+    //! eop
+    mSendEOP = "\r\n";
+    mRecvEOP = "#";
 }
 
 MAppServer::~MAppServer()
@@ -16,7 +20,12 @@ MAppServer::~MAppServer()
 }
 
 int MAppServer::start()
-{ return -1; }
+{
+    if ( assureHomePath() )
+    { return 0; }
+
+    return -1;
+}
 
 int MAppServer::open()
 { return 0; }
@@ -39,6 +48,16 @@ void MAppServer::on_dislink()
 
 bool MAppServer::isLinked()
 { return false; }
+
+void MAppServer::setSendEOP( const QString &eop )
+{ mSendEOP = eop; }
+QString MAppServer::sendEOP()
+{ return mSendEOP; }
+
+void MAppServer::setRecvEOP( const QString &eop )
+{ mRecvEOP = eop; }
+QString MAppServer::recvEOP()
+{ return mRecvEOP; }
 
 int MAppServer::services()
 {
@@ -63,6 +82,34 @@ int MAppServer::workings()
 
 void MAppServer::interrupt( const QByteArray &ary )
 {}
+
+void MAppServer::setServerName( const QString &name )
+{ mServerName = name; }
+QString MAppServer::serverName()
+{ return mServerName; }
+
+bool MAppServer::assureHomePath()
+{
+    QString path = homePath();
+
+    //! create path
+    QDir dir( path );
+    if ( dir.exists() )
+    { return true; }
+    else
+    {
+        if ( dir.mkpath( path) )
+        { return true; }
+        else
+        { return false; }
+    }
+}
+
+QString MAppServer::homePath()
+{
+    QString homePath = qApp->applicationDirPath() + "/" + "file/" + mServerName;
+    return homePath;
+}
 
 void MAppServer::connectWorking( WorkingThread *pWorking )
 {
@@ -103,16 +150,16 @@ void MAppServer::disconnectConsole( ConsoleThread *pThread )
 
 void MAppServer::stopWorkings()
 {
-    mWorkingMutex.lock();
-        foreach( WorkingThread *pThread, mWorkings )
-        { pThread->requestInterruption(); }
-    mWorkingMutex.unlock();
-
     mConsoleMutex.lock();
         logDbg()<<mConsoleServices.size();
         foreach( ConsoleThread *pThread, mConsoleServices )
         { pThread->requestInterruption(); }
     mConsoleMutex.unlock();
+
+    mWorkingMutex.lock();
+        foreach( WorkingThread *pThread, mWorkings )
+        { pThread->requestInterruption(); }
+    mWorkingMutex.unlock();
 }
 
 void MAppServer::slot_clean( QThread * pThread )

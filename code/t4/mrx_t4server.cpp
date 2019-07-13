@@ -6,21 +6,29 @@
 #include "../syspara.h"
 MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
 {
-
+    setServerName("MRX-T4");
 #ifndef _RASPBERRY
 //    mAddr = "TCPIP0::192.168.1.54::inst0::INSTR";        //! descriptor in case sensitive
 //    mAddr = "TCPIP0::192.168.1.122::inst0::INSTR";
-    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";
-//    mAddr = "TCPIP0::192.168.1.160::inst0::INSTR";
+//    mAddr = "TCPIP0::169.254.1.2::inst0::INSTR";
+    mAddr = "TCPIP0::192.168.1.215::inst0::INSTR";
 //    mAddr = "TCPIP0::192.168.1.231::inst0::INSTR";
 #else
     mAddr = "TCPIP0::127.0.0.1::inst0::INSTR";
 #endif
+
+    //! eop
+    setSendEOP( "\r\n\u00A9" );
+    setRecvEOP( "\u00A9" );
 }
 
 int MRX_T4Server::start()
 {
     int ret;
+
+    ret = MAppServer::start();
+    if ( ret != 0 )
+    { return ret; }
 
     //! load the data
     ret = load();
@@ -57,7 +65,15 @@ int MRX_T4Server::open()
     int ret;
 
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
+
+    int iMode;
+#ifdef WIN32
+    iMode = BUS_VXI;
+#else
+    iMode = BUS_SOCKET;
+#endif
+
+    vi = mrgOpenGateWay( iMode, mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
     if ( vi > 0 )
     { mVi = vi; }
     else
@@ -111,6 +127,14 @@ int MRX_T4Server::open()
             { return -1; }
 
             logDbg()<<strIdns;
+        }
+
+        //! config terminal
+        QString baStr = QString("4@%1").arg( deviceHandle() );
+        //! \note F2
+        ret = mrgRobotToolSet( mVi, robotHandle(), 0, baStr.toLatin1().data() );
+        if(ret != 0){
+            return -1;
         }
 
         int dataUpdate = 1;

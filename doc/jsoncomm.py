@@ -18,7 +18,8 @@ def doSomething( socket, dict ):
 
 class MegaRobo():
     def __init__( self, ip="127.0.0.1", port=50000 ):
-
+        self.mSendEOP = "#"
+        self.mRecvEOP = "#"
         self.mSocket1 = SOCKET.socket()
         # self.mSocket2 = SOCKET.socket()
         # self.mSocket3 = SOCKET.socket()

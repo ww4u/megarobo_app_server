@@ -303,21 +303,23 @@ void MAppService::dataProc( )
     int index;
     do
     {
-//        mRecvMutex.lock();
-            index = mRecvCache.indexOf( '#' );
+            //! split the packet
+            index = mRecvCache.indexOf( m_pServer->recvEOP() );
+            int utfLen = m_pServer->recvEOP().toUtf8().length();
             if( index >= 0 )
             {
-                packet = mRecvCache.mid( 0, index + 1 );
-                mRecvCache.remove( 0, index + 1 );
+                packet = mRecvCache.mid( 0, index + utfLen );
+                mRecvCache.remove( 0, index + utfLen );
             }
             else
             {}
-//        mRecvMutex.unlock();
 
         if ( index >= 0 )
         {
+            int utfLen = m_pServer->recvEOP().toUtf8().length();
+
             //! remove the '#'
-            packet.remove( index, 1 );
+            packet.remove( index, utfLen );
 
             //! parse the packet
             doc = QJsonDocument::fromJson( packet );
@@ -331,6 +333,7 @@ void MAppService::dataProc( )
             }
             else
             {
+                logDbg()<<packet;
                 logDbg()<<"Invalid cmd";
             }
         }
@@ -339,7 +342,6 @@ void MAppService::dataProc( )
 
     }while( index != -1 );
 }
-
 //! proc
 void MAppService::proc( QJsonDocument &doc, quint64 &ts )
 {
@@ -420,7 +422,7 @@ void MAppService::output( const QJsonDocument &doc )
     //! use the \n for seperator
     outAry = outAry.simplified();
     if ( outAry.length() > 0 )
-    { outAry.append("\r\n"); }  //! \note control the \r\n
+    { outAry.append( m_pServer->sendEOP() ); }
     else
     { return; }
 
@@ -840,10 +842,14 @@ bool WorkingThread::isWorking()
     return bQueue || mbInRun;
 }
 
-ConsoleThread::ConsoleThread( QString &prog, QStringList &args, QObject *parent ) :QThread( parent )
+ConsoleThread::ConsoleThread( const QString &prog,
+                              const QStringList &args,
+                              const QStringList &shellArg,
+                              QObject *parent ) :QThread( parent )
 {
     mProg = prog;
     mArgs = args;
+    mShellArg = shellArg;
 
     connect( this, SIGNAL(finished()), this, SLOT(deleteLater()) );
 }
@@ -864,12 +870,12 @@ void ConsoleThread::run()
     process.start( mProg, mArgs );
     process.waitForFinished( -1 );
 
-#ifdef _WIN32
+    //! \note
     //! use python process only
     QStringList args;
-    args<<"temp.py";
+    args<<"temp.py"<<mShellArg;
+    logDbg()<<args;
     process.start( "python", args );
-#endif
 
     while( true )
     {logDbg_Thread();

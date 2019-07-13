@@ -69,6 +69,20 @@ protected:
 
     int on_config_proc_q(  QJsonDocument &doc );
 
+    int on_file_proc( QJsonDocument &doc );
+
+    int on_file_write( QJsonDocument &doc );
+    int on_file_read( QJsonDocument &doc );
+    int on_file_delete( QJsonDocument &doc );
+    int on_file_size( QJsonDocument &doc );
+
+    int on_dir_proc( QJsonDocument &doc );
+
+    int on_dir_create( QJsonDocument &doc );
+    int on_dir_delete( QJsonDocument &doc );
+    int on_dir_size( QJsonDocument &doc );
+    int on_dir_list( QJsonDocument &doc );
+
     //! motion
     int on_alignj_proc( QJsonDocument &doc );
     int post_on_alignj_proc( QJsonDocument &doc );
@@ -89,17 +103,20 @@ protected:
     int on_getdi( QJsonDocument &doc, QList<int> &ports );
     int on_getdo( QJsonDocument &doc, QList<int> &ports );
 
+    int _getio( QJsonDocument &doc, QList<int> &ports, int from, QList<int> &portVals );
+
     int on_execute( QJsonDocument &doc );
     int post_on_execute( QJsonDocument &doc );
     int post_on_execute_script( QJsonDocument &doc );
     int post_on_execute_shell( QJsonDocument &doc );
 
     void switch_shell_dir();
-    int run_shell( const QString &fileName );
+    int run_shell( const QString &fileName, const QStringList &args );
 
 protected:
     int rawStatus( QString &status );
 
+    int guessTmoT( int joint, float angle, float t );
     int guessTmo( int joint, float dist, float speed );
     int guessTTmo( float x, float y, float z,
                    float v,

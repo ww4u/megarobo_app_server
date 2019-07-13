@@ -17,6 +17,15 @@ public:
     ObjPose pose;
 };
 
+class FileInfo
+{
+public:
+    QString name;
+    QString type;
+    int size;
+    QString ts;
+};
+
 //! intfs
 class Intfack : public IntfObj
 {
@@ -158,6 +167,30 @@ public:
     {}
 public:
     ObjPoint mPoints;
+};
+
+class IntfFile : public IntfObj
+{
+public:
+    IntfFile( const QString cmd="file" ):IntfObj( cmd )
+    {}
+public:
+    QString name;
+    QString action;     //! write, read, delete, size
+    QString contents;   //! int or string
+    int ret;
+};
+
+class IntfDir : public IntfObj
+{
+public:
+    IntfDir( const QString cmd="dir" ) : IntfObj( cmd )
+    {}
+public:
+    QString name;
+    QString action;     //! create, delete, size, list
+    QString contents;
+    int ret;
 };
 
 class Intfmeta : public IntfObj
@@ -304,6 +337,7 @@ public:
 public:
     QString script;
     QString shell;
+    QString args;
 };
 
 

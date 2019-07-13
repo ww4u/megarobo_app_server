@@ -6,6 +6,7 @@
 
 Let_Server::Let_Server( int portBase, int cnt, QObject *pParent ) : MAppServer( portBase, cnt, pParent )
 {
+    setServerName("LET");
 #ifndef _RASPBERRY
 //    mAddr = "TCPIP0::192.168.1.234::inst0::INSTR";        //! descriptor in case sensitive
 //    mAddr = "TCPIP0::192.168.1.226::inst0::INSTR";        //! descriptor in case sensitive
@@ -18,6 +19,10 @@ Let_Server::Let_Server( int portBase, int cnt, QObject *pParent ) : MAppServer( 
 int Let_Server::start()
 {
     int ret;
+
+    ret = MAppServer::start();
+    if ( ret != 0 )
+    { return ret; }
 
     //! load the data
     ret = load();
@@ -53,8 +58,14 @@ int Let_Server::open()
 
     int ret;
 
+    int iMode;
+#ifdef WIN32
+    iMode = BUS_VXI;
+#else
+    iMode = BUS_SOCKET;
+#endif
     int vi;
-    vi = mrgOpenGateWay( mAddr.toLatin1().data(), 500 );logDbg()<<vi;
+    vi = mrgOpenGateWay( iMode, mAddr.toLatin1().data(), 500 );logDbg()<<vi;
     if ( vi > 0 )
     { mVi = vi; }
     else

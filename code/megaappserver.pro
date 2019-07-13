@@ -72,7 +72,7 @@ INCLUDEPATH += "G:/work/pump/module"
 }
 
 linux-arm* {
-INCLUDEPATH += "/home/w/work/mct-t4/source/device/MegaGateway_SDK/src"
+INCLUDEPATH += "/home/w/work/mct-t4/source/device/MegaRoboMRHT_SDK/src"
 INCLUDEPATH += ../../pump/module
 DEFINES += _RASPBERRY
 }
