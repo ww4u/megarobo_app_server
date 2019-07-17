@@ -155,6 +155,7 @@ public:
     bool tunning[5];
 
     float max_tcp_speed, max_joint_speed;
+    float vel_scale;
 
     //! obj pos
     float x,y,z,w,h;
@@ -216,6 +217,7 @@ public:
     double speed;
     double max_joint_speed;
     double max_body_speed;
+    double vel_scale;
 };
 
 //! operators
@@ -338,6 +340,17 @@ public:
     QString script;
     QString shell;
     QString args;
+};
+
+class IntfVelset : public IntfObj
+{
+public:
+    IntfVelset( const QString cmd="velset") : IntfObj( cmd )
+    {}
+
+public:
+    double vscale;     //! 1~100
+    double maxspeed;
 };
 
 

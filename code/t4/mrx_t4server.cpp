@@ -18,7 +18,7 @@ MRX_T4Server::MRX_T4Server( int portBase, int cnt, QObject *pParent ) : MAppServ
 #endif
 
     //! eop
-    setSendEOP( "\r\n\u00A9" );
+//    setSendEOP( "\r\n\u00A9" );
     setRecvEOP( "\u00A9" );
 }
 

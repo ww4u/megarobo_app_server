@@ -1,4 +1,5 @@
 #include "t4para.h"
+#include "float.h"
 
 #include "../myjson.h"
 #include "../mydebug.h"
@@ -39,6 +40,8 @@ void T4Para::reset()
     mMaxJointStep = 100;
     mMaxBodyStep = 60;
 
+    mVelScale = 100;
+
     mbLink = false;
 }
 
@@ -62,6 +65,22 @@ void T4Para::setSpeed( double spd )
     { return; }
 
     mSpeed = spd;
+}
+
+void T4Para::setVelScale( double scale )
+{
+    if ( scale < 1 || scale > 100 )
+    { return; }
+
+    mVelScale = scale;
+}
+
+void T4Para::setMaxBodySpeed( double spd )
+{
+    if ( spd < FLT_EPSILON )
+    { return; }
+
+    mMaxBodySpeed = spd;
 }
 
 double T4Para::localStep()
@@ -90,6 +109,7 @@ int T4Para::saveConfig()
 
     var.max_body_speed = mMaxBodySpeed;
     var.max_joint_speed = mMaxJointSpeed;
+    var.vel_scale = mVelScale;
 
     QJsonObject obj;
     json_obj( timeout );
@@ -99,6 +119,7 @@ int T4Para::saveConfig()
 
     json_obj( max_body_speed );
     json_obj( max_joint_speed );
+    json_obj( vel_scale );
 
     //! save
     QJsonDocument doc( obj );
@@ -153,7 +174,9 @@ int T4Para::loadConfig()
         deload_double( speed );
 
         deload_double( max_joint_speed );
-        deload_double( max_body_speed )
+        deload_double( max_body_speed );
+
+        try_deload_double( vel_scale );
     }
     else
     { return -1; }
@@ -165,6 +188,7 @@ int T4Para::loadConfig()
     mSpeed = var.speed;
     mMaxJointSpeed = var.max_joint_speed;
     mMaxBodySpeed = var.max_body_speed;
+    mVelScale = var.vel_scale;
 
     return 0;
 }

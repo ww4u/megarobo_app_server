@@ -106,6 +106,8 @@ protected:
     int _getio( QJsonDocument &doc, QList<int> &ports, int from, QList<int> &portVals );
 
     int on_execute( QJsonDocument &doc );
+    int on_velset( QJsonDocument &doc );
+
     int post_on_execute( QJsonDocument &doc );
     int post_on_execute_script( QJsonDocument &doc );
     int post_on_execute_shell( QJsonDocument &doc );
@@ -114,6 +116,8 @@ protected:
     int run_shell( const QString &fileName, const QStringList &args );
 
 protected:
+    float scaleT( float t );
+
     int rawStatus( QString &status );
 
     int guessTmoT( int joint, float angle, float t );

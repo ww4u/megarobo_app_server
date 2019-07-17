@@ -21,6 +21,9 @@ public:
     void setJStep( double step );
     void setSpeed( double spd );
 
+    void setVelScale( double scale );
+    void setMaxBodySpeed( double spd );
+
     double localStep();
     double localJStep();
 
@@ -60,6 +63,8 @@ public:
     double mMaxJointStep, mMaxBodyStep;
                         //! points
     QList<ObjPoint *> mPoints;
+
+    double mVelScale;   //! 1-100
 
     //! dynamic
     bool mbLink;
