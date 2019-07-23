@@ -1785,7 +1785,7 @@ int MRX_T4Service::on_seto( QJsonDocument &doc )
     pre_def( IntfSetio );
 
     deload_string( type );
-    deload_int( value );
+
     //! deload array
     if ( obj.contains("port") )
     {
@@ -1803,10 +1803,31 @@ int MRX_T4Service::on_seto( QJsonDocument &doc )
         }
     }
 
+    if ( obj.contains("value") )
+    {
+        if ( obj.value("value").isArray() )
+        {
+            QJsonArray ary = obj.value("value").toArray();
+            for ( int i = 0; i < ary.size(); i++ )
+            {
+                var.vals.append( ary.at(i).toInt() );
+            }
+        }
+        else
+        {
+            var.vals.append( obj.value("value").toInt() );
+        }
+    }
+
     if ( var.ports.size() > 0  )
     {}
     else
     { logDbg(); return localRet; }
+
+    if ( var.ports.size() == var.vals.size() )
+    {}
+    else
+    { return -1; }
 
     //! check port
     for ( int i = 0; i < var.ports.size(); i++ )
@@ -1815,13 +1836,16 @@ int MRX_T4Service::on_seto( QJsonDocument &doc )
         { logDbg();return -1; }
     }
 
-    qint32 mask = 0;
+    //! \note 0 is all available
+    qint32 mask = 0x0f;
+    qint32 val = 0;
     for ( int i = 0; i < var.ports.size(); i++ )
     {
-        mask |= 1<<var.ports.at(i);
+        mask &= ~( 1 << ( var.ports.at(i) - 1 ) );
+        val |= ( var.vals.at(i) > 0 ? 1 : 0 ) << ( var.ports.at(i) - 1 );
     }
 
-    localRet = mrgProjectIOSet( local_vi(), IOSET_ALL, var.value, mask );
+    localRet = mrgProjectIOSet( local_vi(), IOSET_ALL, val, mask );
     return localRet;
 
 }
@@ -1868,7 +1892,8 @@ int MRX_T4Service::on_getio( QJsonDocument &doc )
     return localRet;
 }
 
-//! di: 1,2,3,4,5,,,10
+//! di: 1~26
+//!
 int MRX_T4Service::on_getdi( QJsonDocument &doc, QList<int> &ports )
 {
     pre_def( IntfDIOs );
@@ -1876,11 +1901,11 @@ int MRX_T4Service::on_getdi( QJsonDocument &doc, QList<int> &ports )
     //! check port
     for ( int i = 0; i < ports.size(); i++ )
     {
-        if ( ports.at(i) < IOGET_X1 || ports.at(i) > IOGET_X10 )
+        if ( ports.at(i) < (IOMRHT29_RDYEN+1) || ports.at(i) > (IOMRHT29_XIN9+1) )
         { return -1; }
     }
 
-    localRet = _getio( doc, ports, IOGET_X1, var.value );
+    localRet = _getio( doc, ports, 0, IOMRHT29_DIX0, var.value );
     if ( localRet != 0 )
     { return localRet; }
 
@@ -1901,11 +1926,12 @@ int MRX_T4Service::on_getdo( QJsonDocument &doc, QList<int> &ports )
     //! check port
     for ( int i = 0; i < ports.size(); i++ )
     {
-        if ( ports.at(i) < (IOGET_Y1 - IOGET_Y1 + 1) || ports.at(i) > (IOGET_Y4 - IOGET_Y1 + 1) )
+        if ( ports.at(i) < (IOGET_Y1 - IOGET_Y1 + 1)
+             || ports.at(i) > (IOGET_Y4 - IOGET_Y1 + 1) )
         { return -1; }
     }
 
-    localRet = _getio( doc, ports, IOGET_Y1, var.value );
+    localRet = _getio( doc, ports, IOMRHT29_Y1, 1, var.value );
     if ( localRet != 0 )
     { return localRet; }
 
@@ -1918,7 +1944,9 @@ int MRX_T4Service::on_getdo( QJsonDocument &doc, QList<int> &ports )
     return 0;
 }
 
-int MRX_T4Service::_getio( QJsonDocument &doc, QList<int> &ports, int from, QList<int> &portVals )
+int MRX_T4Service::_getio( QJsonDocument &doc, QList<int> &ports,
+                           int shift,
+                           int from, QList<int> &portVals )
 {
     pre_def( IntfDIOs );
 
@@ -1926,6 +1954,8 @@ int MRX_T4Service::_getio( QJsonDocument &doc, QList<int> &ports, int from, QLis
     localRet = mrgProjectIOGetAll( local_vi(), &state );
     if ( localRet < 0 )
     { return localRet; }
+
+    state = state >> shift;
 
     for ( int i = 0; i < ports.size(); i++ )
     {

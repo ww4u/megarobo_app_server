@@ -103,7 +103,9 @@ protected:
     int on_getdi( QJsonDocument &doc, QList<int> &ports );
     int on_getdo( QJsonDocument &doc, QList<int> &ports );
 
-    int _getio( QJsonDocument &doc, QList<int> &ports, int from, QList<int> &portVals );
+    int _getio( QJsonDocument &doc, QList<int> &ports,
+                int shift,
+                int from, QList<int> &portVals );
 
     int on_execute( QJsonDocument &doc );
     int on_velset( QJsonDocument &doc );

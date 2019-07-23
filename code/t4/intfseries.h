@@ -327,7 +327,7 @@ public:
 public:
     QString type;
     QList<int> ports;
-    int value;
+    QList<int> vals;
 };
 
 class IntfExecute: public IntfObj
