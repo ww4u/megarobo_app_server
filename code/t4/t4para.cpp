@@ -34,13 +34,15 @@ void T4Para::reset()
     mJointStep = 5;
     mSpeed = 20;
 
-    mMaxBodySpeed = 100;    //! mm/s
+    mMaxBodySpeed = 250;    //! mm/s
     mMaxJointSpeed = 60;    //! degree/s
 
     mMaxJointStep = 100;
     mMaxBodyStep = 60;
 
     mVelScale = 100;
+
+    mAutoAcc = 50;
 
     mbLink = false;
 }
@@ -83,6 +85,15 @@ void T4Para::setMaxBodySpeed( double spd )
     mMaxBodySpeed = spd;
 }
 
+void T4Para::setAutoAcc( double acc )
+{
+    if ( acc > FLT_EPSILON )
+    { mAutoAcc = acc; }
+    else
+    { //! invalid
+    }
+}
+
 double T4Para::localStep()
 {
     return mMaxBodyStep * mStep / 100;
@@ -120,6 +131,7 @@ int T4Para::saveConfig()
     json_obj( max_body_speed );
     json_obj( max_joint_speed );
     json_obj( vel_scale );
+    json_obj( auto_acc );
 
     //! save
     QJsonDocument doc( obj );
@@ -177,6 +189,7 @@ int T4Para::loadConfig()
         deload_double( max_body_speed );
 
         try_deload_double( vel_scale );
+        try_deload_double( auto_acc );
     }
     else
     { return -1; }
@@ -188,7 +201,10 @@ int T4Para::loadConfig()
     mSpeed = var.speed;
     mMaxJointSpeed = var.max_joint_speed;
     mMaxBodySpeed = var.max_body_speed;
-    mVelScale = var.vel_scale;
+    if ( var.bmMap.contains("vel_scale") && var.bmMap["vel_scale"] )
+    { mVelScale = var.vel_scale; };
+    if ( var.bmMap.contains("auto_acc") && var.bmMap["auto_acc"] )
+    { mAutoAcc = var.auto_acc; };
 
     return 0;
 }

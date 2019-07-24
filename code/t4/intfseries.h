@@ -218,6 +218,7 @@ public:
     double max_joint_speed;
     double max_body_speed;
     double vel_scale;
+    double auto_acc;
 };
 
 //! operators

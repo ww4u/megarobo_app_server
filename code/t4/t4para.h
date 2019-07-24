@@ -24,6 +24,8 @@ public:
     void setVelScale( double scale );
     void setMaxBodySpeed( double spd );
 
+    void setAutoAcc( double acc );
+
     double localStep();
     double localJStep();
 
@@ -65,6 +67,7 @@ public:
     QList<ObjPoint *> mPoints;
 
     double mVelScale;   //! 1-100
+    double mAutoAcc;    //! 1~100
 
     //! dynamic
     bool mbLink;

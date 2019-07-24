@@ -154,11 +154,17 @@ void MAppServer::stopWorkings()
         logDbg()<<mConsoleServices.size();
         foreach( ConsoleThread *pThread, mConsoleServices )
         { pThread->requestInterruption(); }
+
+        foreach( ConsoleThread *pThread, mConsoleServices )
+        { pThread->wait(); }
     mConsoleMutex.unlock();
 
     mWorkingMutex.lock();
         foreach( WorkingThread *pThread, mWorkings )
         { pThread->requestInterruption(); }
+
+        foreach( WorkingThread *pThread, mWorkings )
+        { pThread->wait(); }
     mWorkingMutex.unlock();
 }
 

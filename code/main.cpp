@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
     }
 
     pServer->start();
-    logDbg()<<ret;
     do
     {
         ret = pServer->open();

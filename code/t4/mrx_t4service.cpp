@@ -446,6 +446,10 @@ int MRX_T4Service::on_action_proc( QJsonDocument &doc )
 //        Q_ASSERT( NULL != m_pWorkingThread );
 //        m_pWorkingThread->requestInterruption();
     }
+    else if ( var.item == "clr" )
+    {
+        localRet = mrgSystemErrorAck( local_vi() );
+    }
     else if ( var.item == "stopmove" )
     {
         //! \todo
@@ -1690,7 +1694,6 @@ int MRX_T4Service::post_on_move_proc( QJsonDocument &doc )
     { return localRet; }
 
     //! valid t
-//    if ( var.bmMap.contains("t") && var.bmMap.value("t") )
     if ( _has_item(t) )
     { t = var.t; }
 
@@ -2096,7 +2099,7 @@ float MRX_T4Service::scaleT( float t )
 {
     check_connect();
 
-    return t / _pLocalServer->mVelScale;
+    return t / _pLocalServer->mVelScale * 100;
 }
 
 int MRX_T4Service::rawStatus( QString &status )
@@ -2147,6 +2150,8 @@ int MRX_T4Service::guessTmo( int joint, float dist, float speed )
 int MRX_T4Service::guessTTmo( float x, float y, float z,
                               float v, float *pT, float *pTmo )
 {
+    check_connect();
+
     int localRet;
 
     float fx, fy, fz;
@@ -2161,8 +2166,21 @@ int MRX_T4Service::guessTTmo( float x, float y, float z,
     float dist = eulaDistance( x, y, z, fx, fy, fz );
 
     //! scale the t
-    *pT = dist / qAbs( v ) ;
-    *pT = scaleT( *pT );
+    float t;
+    t = dist / qAbs( v ) ;
+
+    //! check a
+    float a = 16*qAbs( dist )/(3*t*t);
+    float amax = 16.0f * _pLocalServer->mMaxBodySpeed / 3 * _pLocalServer->mAutoAcc / 100;
+
+    if ( a > amax )
+    {
+        t = sqrt( 16*qAbs( dist )/(3*amax) );
+    }
+    else
+    {}
+logDbg()<<a<<amax<<_pLocalServer->mMaxBodySpeed<<_pLocalServer->mAutoAcc;
+    *pT = scaleT( t );
 
     *pTmo = dist * 1000 + *pT + 500;
 

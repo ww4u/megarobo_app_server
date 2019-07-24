@@ -734,17 +734,28 @@ void WorkingThread::run()
 
     ProxyApi* pApi;
     int ret = -1;
-    while( !mQueue.isEmpty() )
+    while( true )
     {
         //! rst the ret
         ret = -1;
 
         if ( isInterruptionRequested() )
         {
+            mMutex.lock();
+                mbInRun = false;
+            mMutex.unlock();
             break;
         }
 
         mMutex.lock();
+            if ( mQueue.isEmpty() )
+            {
+                mbInRun = false;
+                mMutex.unlock();
+                break;
+            }
+            else
+            {}
             pApi = mQueue.dequeue();
         mMutex.unlock();
         if ( NULL == pApi || NULL == pApi->m_pObj )
@@ -823,7 +834,20 @@ int WorkingThread::attachProc( MAppService *pObj,
     mMutex.unlock();
 
     if ( isRunning() )
-    {}
+    {
+        //! has finished
+        if ( !mbInRun )
+        {
+            //! wait for end
+            while( isRunning() )
+            { QThread::msleep( 1 ); }
+
+            start();
+        }
+        else
+        {
+        }
+    }
     else
     {
         start();
@@ -838,7 +862,7 @@ bool WorkingThread::isWorking()
     mMutex.lock();
         bQueue = mQueue.size() > 0;
     mMutex.unlock();
-
+logDbg()<<mQueue.size() << mbInRun<< thread();
     return bQueue || mbInRun;
 }
 
