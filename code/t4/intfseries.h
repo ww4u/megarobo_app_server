@@ -270,6 +270,15 @@ public:
     double step;
 };
 
+class IntfPinch : public IntfObj
+{
+public:
+    IntfPinch( const QString cmd="pinch" ) : IntfObj( cmd )
+    {}
+public:
+    double angle, v, t;
+};
+
 class IntfSleep : public IntfObj
 {
 public:

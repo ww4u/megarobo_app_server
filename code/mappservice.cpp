@@ -181,6 +181,11 @@ int MAppService::_on_preProc( QJsonDocument &doc )
 int MAppService::_on_postProc( QJsonDocument &doc )
 { return 0; }
 
+int MAppService::preConsoleStart()
+{ return 0; }
+int MAppService::postConsoleEnd()
+{ return 0; }
+
 void MAppService::setTimeout( int tmo )
 { mTimeout = tmo; }
 int MAppService::timeout()
@@ -219,6 +224,9 @@ void MAppService::connnectConsoleWorkings( ConsoleThread *p )
 
             connect( p, SIGNAL(signal_clean(ConsoleThread*)),
                      this, SLOT(slot_console_clean(ConsoleThread*)) );
+
+            connect( p, SIGNAL(started()),
+                     this, SLOT(slot_console_started()) );
         }
     mConsoleMutex.unlock();
 }
@@ -432,11 +440,14 @@ void MAppService::output( const QJsonDocument &doc )
         if ( NULL == pEvent )
         { break; }
         pEvent->setBufferData( outAry );
-//        pEvent->setPara( outAry );
 
         qApp->postEvent( this, pEvent );
 
-        sysLogOut( outAry );
+        QByteArray outBuffer;
+
+        outBuffer = QString( "%1:").arg( (quint32)QThread::currentThreadId() ).toLatin1();
+
+        sysLogOut( outBuffer + outAry );
     }while( false );
 }
 
@@ -628,7 +639,11 @@ void MAppService::slot_dataIn( )
 
     resetTimeout();
 
-    sysLogIn( ary );
+    QByteArray outBuffer;
+
+    outBuffer = QString( "%1:").arg( (quint32)QThread::currentThreadId() ).toLatin1();
+
+    sysLogIn( outBuffer + ary );
 
     dataProc();
 }
@@ -717,9 +732,16 @@ void MAppService::slot_on_socket_disconnect()
     quit();
 }
 
+void MAppService::slot_console_started()
+{
+    preConsoleStart();
+}
+
 void MAppService::slot_console_clean( ConsoleThread *pThread )
 {
     disconnectConsoleWorkings( pThread );
+
+    postConsoleEnd();
 }
 
 //! thread
@@ -888,6 +910,8 @@ ConsoleThread::~ConsoleThread()
 
 void ConsoleThread::run()
 {
+    emit signal_start( this );
+
     //! compiled to temp.py
     QProcess process;
     logDbg()<<mProg<<mArgs;

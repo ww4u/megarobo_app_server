@@ -69,7 +69,7 @@ int MRX_T4Server::open()
 #ifdef WIN32
     iMode = BUS_VXI;
 #else
-    iMode = BUS_SOCKET;
+    iMode = BUS_VXI;
 #endif
 
     vi = mrgOpenGateWay( iMode, mAddr.toLatin1().data(), 2000 );logDbg()<<vi;
@@ -130,8 +130,15 @@ int MRX_T4Server::open()
 
         //! config terminal
         QString baStr = QString("4@%1").arg( deviceHandle() );
-        //! \note F2
-        ret = mrgRobotToolSet( mVi, robotHandle(), 0, baStr.toLatin1().data() );
+
+        //! \note F3 for zero to 180
+        ret = mrgRobotToolSet( mVi, robotHandle(), 1, baStr.toLatin1().data() );
+        if(ret != 0){
+            return -1;
+        }
+
+        //! config the slow ratio
+        ret = mrgMRQMotorGearRatio( mVi, deviceHandle(), 4, 25, 1 );
         if(ret != 0){
             return -1;
         }

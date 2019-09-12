@@ -121,6 +121,9 @@ protected:
     virtual int _on_preProc( QJsonDocument &doc );
     virtual int _on_postProc( QJsonDocument &doc );
 
+    virtual int preConsoleStart();
+    virtual int postConsoleEnd();
+
 public:
     void setTimeout( int tmo );
     int timeout();
@@ -209,8 +212,8 @@ public slots:
     void slot_on_socket_error( QAbstractSocket::SocketError err );
     void slot_on_socket_disconnect();
 
+    void slot_console_started();
     void slot_console_clean( ConsoleThread *pThread );
-
 
 };
 
@@ -249,6 +252,7 @@ public:
     virtual ~ConsoleThread();
 
 Q_SIGNALS:
+    void signal_start( ConsoleThread *pThread );
     void signal_clean( ConsoleThread *pThread );
 
 protected:

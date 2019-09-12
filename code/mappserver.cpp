@@ -137,6 +137,9 @@ logDbg()<<mConsoleServices.size();
     //! console
     connect( pThread, SIGNAL(signal_clean(ConsoleThread*)),
              this, SLOT(slot_console_clean(ConsoleThread*)) );
+
+    connect( pThread, SIGNAL(signal_start(ConsoleThread*)),
+             this, SLOT(slot_console_start(ConsoleThread*))) ;
 }
 void MAppServer::disconnectConsole( ConsoleThread *pThread )
 {
@@ -181,6 +184,9 @@ void MAppServer::slot_clean( QThread * pThread )
 
     mServiceMutex.unlock();
 }
+
+void MAppServer::slot_console_start( ConsoleThread *pThread )
+{}
 
 void MAppServer::slot_console_clean( ConsoleThread *pThread )
 {

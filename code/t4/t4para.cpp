@@ -42,7 +42,7 @@ void T4Para::reset()
 
     mVelScale = 100;
 
-    mAutoAcc = 50;
+    mAutoAcc = 20;
 
     mbLink = false;
 }

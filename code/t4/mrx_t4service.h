@@ -22,6 +22,9 @@ protected:
     virtual int _on_preProc( QJsonDocument &doc );
     virtual int _on_postProc( QJsonDocument &doc );
 
+    virtual int preConsoleStart();
+    virtual int postConsoleEnd( );
+
     int on_ack_proc( QJsonDocument &doc );
 
     int on_step_proc(  QJsonDocument &doc );
@@ -37,6 +40,7 @@ protected:
 
     int on_action_proc(  QJsonDocument &doc );
     int post_on_action_proc(  QJsonDocument &doc );
+    int homeProc( QJsonDocument &doc );
 
     int on_indicator_proc(  QJsonDocument &doc );
     int post_on_indicator_proc(  QJsonDocument &doc );
@@ -50,6 +54,7 @@ protected:
 
     int on_device_status_proc(  QJsonDocument &doc );
     int on_device_status_raw_proc( QJsonDocument &doc );
+    int on_device_status_controller_proc(  QJsonDocument &doc );
     int on_controller_status_proc( QJsonDocument &doc );
 
     int on_exception_proc(  QJsonDocument &doc );
@@ -96,6 +101,9 @@ protected:
     int on_movel_proc( QJsonDocument &doc );
     int post_on_movel_proc( QJsonDocument &doc );
 
+    int on_pinch_proc( QJsonDocument &doc );
+    int post_on_pinch_proc( QJsonDocument &doc );
+
     int on_setio( QJsonDocument &doc );
     int on_seto( QJsonDocument &doc );
 
@@ -133,6 +141,8 @@ protected:
 
     float alignP360( float p );
     float alignN360( float p );
+
+    int terminalAngleNow( float &angle );
 };
 
 #endif // MRX_T4SERVICE_H

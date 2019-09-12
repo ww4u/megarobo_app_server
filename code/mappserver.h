@@ -67,6 +67,7 @@ signals:
 
 protected Q_SLOTS:
     void slot_clean( QThread * );
+    void slot_console_start( ConsoleThread *pThread );
     void slot_console_clean( ConsoleThread *pThread );
 
 protected:
